@@ -65,7 +65,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 displayResults(generated);
             } catch (error) {
-                alert(`Generation failed: ${error.message}`);
+                let userMessage = `Generation failed: ${error.message}`;
+
+                const highlightError = (axis) => {
+                    const input = document.querySelector(`.${axis}-value`);
+                    if (input && input.offsetParent !== null) { // Check if visible
+                        input.classList.add('invalid-input');
+                        input.focus();
+                        input.addEventListener('input', () => input.classList.remove('invalid-input'), { once: true });
+                    }
+                    const samplerSelect = document.getElementById(`${axis}SamplerValues`);
+                    if (samplerSelect && samplerSelect.offsetParent !== null) { // Check if visible
+                        samplerSelect.classList.add('invalid-input');
+                        samplerSelect.focus();
+                        samplerSelect.addEventListener('change', () => samplerSelect.classList.remove('invalid-input'), { once: true });
+                    }
+                };
+                
+                if (error.message.startsWith('X_AXIS_EMPTY')) {
+                    userMessage = error.message.replace('X_AXIS_EMPTY: ', '');
+                    highlightError('x');
+                } else if (error.message.startsWith('Y_AXIS_EMPTY')) {
+                    userMessage = error.message.replace('Y_AXIS_EMPTY: ', '');
+                    highlightError('y');
+                } else if (error.message.startsWith('Z_AXIS_EMPTY')) {
+                    userMessage = error.message.replace('Z_AXIS_EMPTY: ', '');
+                    highlightError('z');
+                }
+            
+                alert(userMessage);
                 console.error(error);
             } finally {
                 elements.loadingSpinner.style.display = 'none';

@@ -11,7 +11,7 @@ export function getParamType(paramName) {
 }
 
 export function parseValueString(str) {
-    if (!str || str.trim() === '') return [];
+    if (str === null || str === undefined || str.trim() === '') return [];
     str = str.trim();
 
     // Helper to round numbers to a high precision to avoid floating point artifacts
@@ -88,26 +88,27 @@ export function parseValueString(str) {
         return values;
     }
     
+    // Universal item processor for lists and single items
+    const processItem = (s) => {
+        const val = s.trim();
+        if (val === '') return null;
+        if (val.toLowerCase() === 'true') return true;
+        if (val.toLowerCase() === 'false') return false;
+        // Use isFinite which is more robust than just checking for numbers
+        if (isFinite(val)) { 
+            return parseFloat(val);
+        }
+        return val; // Return as a string if it's not a number or boolean
+    };
+
     // Format: 1, 2, 5 OR true, false, value
     if (str.includes(',')) {
-        return str.split(',').map(s => {
-            const val = s.trim();
-            if (val === '') return null;
-            // isFinite is a good way to check if a string represents a number
-            if (isFinite(val)) { 
-                return parseFloat(val);
-            }
-            return val;
-        }).filter(v => v !== null); // Remove empty values from "a,,b"
+        return str.split(',').map(processItem).filter(v => v !== null);
     }
 
     // Format: 7 OR true OR "some value"
-    if (isFinite(str) && str.trim() !== '') {
-        return [parseFloat(str)];
-    }
-    
-    // Fallback to a single string value
-    return [str];
+    const singleValue = processItem(str);
+    return singleValue !== null ? [singleValue] : [];
 }
 
 

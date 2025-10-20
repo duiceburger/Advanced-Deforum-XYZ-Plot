@@ -46,13 +46,15 @@ export function generateSettings(getPromptsObject, getValuesForAxis) {
     const yParam = elements.yParam.value;
     const zParam = elements.enableZ.checked ? elements.zParam.value : null;
 
+    if (!xParam || !yParam) throw new Error("X and Y-Axis parameters must be selected.");
+
     const xValues = getValuesForAxis('x');
     const yValues = getValuesForAxis('y');
     const zValues = zParam ? getValuesForAxis('z') : [null];
 
-    if (!xParam || !yParam) throw new Error("X and Y-Axis parameters must be selected.");
-    if (xValues.length === 0 || yValues.length === 0) throw new Error("X and Y-Axis must have at least one value.");
-    if (zParam && zValues.length === 0) throw new Error("Z-Axis must have at least one value when enabled.");
+    if (xParam && xValues.length === 0) throw new Error(`X_AXIS_EMPTY: The X-Axis parameter '${xParam}' has no values defined. Please provide at least one value.`);
+    if (yParam && yValues.length === 0) throw new Error(`Y_AXIS_EMPTY: The Y-Axis parameter '${yParam}' has no values defined. Please provide at least one value.`);
+    if (zParam && zValues.length === 0) throw new Error(`Z_AXIS_EMPTY: The Z-Axis parameter '${zParam}' has no values defined. Please provide at least one value.`);
 
     const baseSettings = getBaseSettings();
     const commonOverrides = getCommonOverrides();
