@@ -2,7 +2,28 @@
 import { elements, commonSettingsElements } from '../dom.js';
 import { getBaseSettings, setGeneratedSettings, getGeneratedSettings } from '../state.js';
 
-function updateBatchNamePreview() {
+export function updateSuggestedTemplate() {
+    const baseSettings = getBaseSettings();
+    if (!baseSettings || Object.keys(baseSettings).length === 0) return;
+
+    const parts = ['{timestring}', '{filename}'];
+    
+    const xParam = elements.xParam.value;
+    const yParam = elements.yParam.value;
+    const zParam = elements.enableZ.checked ? elements.zParam.value : null;
+
+    if (xParam) parts.push('{x_param}-{x_value}');
+    if (yParam) parts.push('{y_param}-{y_value}');
+    if (zParam) parts.push('{z_param}-{z_value}');
+
+    // Add some common, useful parameters to the default template
+    parts.push('Seed-{seed}');
+    parts.push('CFG-{cfg_scale}');
+
+    elements.batchNameTemplate.value = parts.join('_');
+}
+
+export function updateBatchNamePreview() {
     const baseSettings = getBaseSettings();
     if (!baseSettings.W) return;
     
@@ -12,10 +33,11 @@ function updateBatchNamePreview() {
     
     const xParam = elements.xParam.value || 'x';
     const yParam = elements.yParam.value || 'y';
-    const zParam = elements.enableZ.checked ? elements.zParam.value : 'z';
+    const zParam = elements.enableZ.checked ? (elements.zParam.value || 'z') : 'z';
 
     const replacements = {
         timestring,
+        filename: elements.customFilename.value,
         seed: commonSettingsElements.seed.value || baseSettings.seed,
         seed_behavior: commonSettingsElements.seed_behavior.value || baseSettings.seed_behavior,
         w: baseSettings.W,
@@ -38,18 +60,6 @@ function updateBatchNamePreview() {
     }
     
     elements.batchNamePreview.textContent = template + '.txt';
-}
-
-function initializeBatchNameTemplate(onUpdate) {
-    elements.batchNameTemplate.addEventListener('input', onUpdate);
-    elements.variableButtons.addEventListener('click', (e) => {
-        if (e.target.classList.contains('variable-btn')) {
-            const variable = e.target.dataset.variable;
-            elements.batchNameTemplate.value += variable;
-            elements.batchNameTemplate.focus();
-            onUpdate();
-        }
-    });
 }
 
 function downloadAll(generatedSettings) {
@@ -76,14 +86,34 @@ export function displayResults(generatedSettings) {
     elements.results.style.display = 'block';
 }
 
-export const initializeResults = {
-    updateBatchNamePreview,
-    initializeBatchNameTemplate,
-};
+export function initializeResults(onUpdate) {
+    elements.batchNameTemplate.addEventListener('input', onUpdate);
+    elements.customFilename.addEventListener('input', onUpdate);
 
-elements.downloadBtn.addEventListener('click', () => {
-    const settings = getGeneratedSettings();
-    if(settings && settings.length > 0) {
-        downloadAll(settings);
-    }
-});
+    elements.variableButtons.addEventListener('click', (e) => {
+        if (e.target.classList.contains('variable-btn')) {
+            const variable = e.target.dataset.variable;
+            const input = elements.batchNameTemplate;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const before = text.substring(0, start);
+            const after = text.substring(end, text.length);
+
+            input.value = (before + variable + after);
+            
+            // Move cursor to after the inserted variable
+            input.selectionStart = input.selectionEnd = start + variable.length;
+            
+            input.focus();
+            onUpdate();
+        }
+    });
+
+    elements.downloadBtn.addEventListener('click', () => {
+        const settings = getGeneratedSettings();
+        if(settings && settings.length > 0) {
+            downloadAll(settings);
+        }
+    });
+}

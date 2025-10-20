@@ -286,30 +286,32 @@
                 <div id="globalSettings">
                     <div class="batch-name-section">
                         <h4>Output Filename Template</h4>
-                        <p class="param-info">This template defines the filename for each generated settings file. Use the variables below to create unique, descriptive names.</p>
+                        <p class="param-info">This template defines the filename for each generated settings file. The template will update automatically based on your plot selections.</p>
+                        <div class="form-group">
+                             <label for="customFilename">Base Filename</label>
+                             <input type="text" id="customFilename" value="deforum_experiment">
+                        </div>
                         <div class="form-group">
                             <label for="batchNameTemplate">Template</label>
-                            <input type="text" id="batchNameTemplate" value="{timestring}_512-circle_seed_{seed}_{seed_behavior}_{w}x{h}_{x_param}-{x_value}_{y_param}-{y_value}" placeholder="Enter batch name template">
+                            <input type="text" id="batchNameTemplate" placeholder="Auto-generated based on selections">
                             <div class="examples">
                                 <h4>Available Variables</h4>
                                 <p>Click any variable below to add it to your template:</p>
                                 <div class="variable-buttons">
-                                    <button type="button" class="variable-btn" data-variable="{timestring}">{timestring}</button>
-                                    <button type="button" class="variable-btn" data-variable="{seed}">{seed}</button>
-                                    <button type="button" class="variable-btn" data-variable="{seed_behavior}">{seed_behavior}</button>
-                                    <button type="button" class="variable-btn" data-variable="{w}">{w}</button>
-                                    <button type="button" class="variable-btn" data-variable="{h}">{h}</button>
-                                    <button type="button" class="variable-btn" data-variable="{x_param}">{x_param}</button>
-                                    <button type="button" class="variable-btn" data-variable="{x_value}">{x_value}</button>
-                                    <button type="button" class="variable-btn" data-variable="{y_param}">{y_param}</button>
-                                    <button type="button" class="variable-btn" data-variable="{y_value}">{y_value}</button>
-                                    <button type="button" class="variable-btn" data-variable="{z_param}">{z_param}</button>
-                                    <button type="button" class="variable-btn" data-variable="{z_value}">{z_value}</button>
-                                    <button type="button" class="variable-btn" data-variable="{steps}">{steps}</button>
-                                    <button type="button" class="variable-btn" data-variable="{cfg_scale}">{cfg_scale}</button>
-                                    <button type="button" class="variable-btn" data-variable="{sampler}">{sampler}</button>
-                                    <button type="button" class="variable-btn" data-variable="{strength}">{strength}</button>
-                                    <button type="button" class="variable-btn" data-variable="{max_frames}">{max_frames}</button>
+                                    <button type="button" class="variable-btn" data-variable="{timestring}">Timestring</button>
+                                    <button type="button" class="variable-btn" data-variable="{filename}">Filename</button>
+                                    <button type="button" class="variable-btn" data-variable="Seed-{seed}">Seed</button>
+                                    <button type="button" class="variable-btn" data-variable="Behavior-{seed_behavior}">Seed Behavior</button>
+                                    <button type="button" class="variable-btn" data-variable="W-{w}">Width</button>
+                                    <button type="button" class="variable-btn" data-variable="H-{h}">Height</button>
+                                    <button type="button" class="variable-btn" data-variable="{x_param}-{x_value}">X-Axis</button>
+                                    <button type="button" class="variable-btn" data-variable="{y_param}-{y_value}">Y-Axis</button>
+                                    <button type="button" class="variable-btn" data-variable="{z_param}-{z_value}">Z-Axis</button>
+                                    <button type="button" class="variable-btn" data-variable="Steps-{steps}">Steps</button>
+                                    <button type="button" class="variable-btn" data-variable="CFG-{cfg_scale}">CFG Scale</button>
+                                    <button type="button" class="variable-btn" data-variable="Sampler-{sampler}">Sampler</button>
+                                    <button type="button" class="variable-btn" data-variable="Strength-{strength}">Strength</button>
+                                    <button type="button" class="variable-btn" data-variable="Frames-{max_frames}">Max Frames</button>
                                 </div>
                                 <div id="batchNamePreview" class="preview-text">Preview will appear here...</div>
                             </div>

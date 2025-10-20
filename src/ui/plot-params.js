@@ -85,7 +85,7 @@ const addValueField = (containerId) => {
     inputGroup.querySelector('.remove-btn').addEventListener('click', () => inputGroup.remove());
 };
 
-export function initializePlotParams() {
+export function initializePlotParams(onUpdate) {
     const parameterList = getParameterList();
     const selects = [elements.xParam, elements.yParam, elements.zParam];
     selects.forEach(select => {
@@ -121,11 +121,15 @@ export function initializePlotParams() {
         const enabled = elements.enableZ.checked;
         elements.zParamGroup.style.display = enabled ? 'block' : 'none';
         elements.zValues.style.display = enabled ? 'block' : 'none';
+        onUpdate();
     });
 
     ['x', 'y', 'z'].forEach(axis => {
         const paramSelect = elements[`${axis}Param`];
-        paramSelect.addEventListener('change', (e) => updateParamUI(axis, e.target.value));
+        paramSelect.addEventListener('change', (e) => {
+            updateParamUI(axis, e.target.value);
+            onUpdate();
+        });
         const promptModeSelect = document.getElementById(`${axis}PromptMode`);
         promptModeSelect.addEventListener('change', () => updateParamUI(axis, paramSelect.value));
     });

@@ -16,6 +16,7 @@ function generateFilename(settings, plotParams) {
     
     const replacements = {
         timestring,
+        filename: elements.customFilename.value,
         seed: settings.seed,
         seed_behavior: settings.seed_behavior,
         w: settings.W,
@@ -73,15 +74,22 @@ export function generateSettings(getPromptsObject, getValuesForAxis) {
                     if (param === 'prompts') {
                         const mode = document.getElementById(`${axis}PromptMode`).value;
                         if (mode === 'override') {
-                            try {
-                                const parsedValue = JSON.parse(value);
-                                currentPrompts = typeof parsedValue === 'object' ? parsedValue : currentPrompts;
-                            } catch (e) {
-                                console.warn(`Invalid JSON in prompt override for ${axis}-axis:`, value);
+                            if (typeof value === 'string' && value.trim().startsWith('{')) {
+                                try {
+                                    const parsedValue = JSON.parse(value);
+                                    if (typeof parsedValue === 'object' && parsedValue !== null) {
+                                        currentPrompts = parsedValue;
+                                    }
+                                } catch (e) {
+                                    console.warn(`Invalid JSON in prompt override for ${axis}-axis, treating as string:`, value);
+                                    currentPrompts = { "0": value };
+                                }
+                            } else {
+                                currentPrompts = { "0": String(value) };
                             }
                         } else { // append
                             for (const frame in currentPrompts) {
-                                currentPrompts[frame] += `, ${value}`;
+                                currentPrompts[frame] += `, ${String(value)}`;
                             }
                         }
                     } else if (param) {

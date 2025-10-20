@@ -4,10 +4,24 @@ import { initializeFileHandler } from './src/ui/file-handler.js';
 import { initializePrompts, getPromptsObject } from './src/ui/prompts.js';
 import { populateCommonSettings, initializeCommonSettingsEventListeners } from './src/ui/common-settings.js';
 import { initializePlotParams, getValuesForAxis } from './src/ui/plot-params.js';
-import { initializeResults, displayResults } from './src/ui/results.js';
+import { initializeResults, displayResults, updateSuggestedTemplate, updateBatchNamePreview } from './src/ui/results.js';
 import { generateSettings } from './src/core/generator.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Regenerates the template suggestion AND updates the preview.
+    // Should be used when plot parameters change.
+    const updateTemplateAndPreview = () => {
+        updateSuggestedTemplate();
+        updateBatchNamePreview();
+    };
+    
+    // ONLY updates the preview based on the current template.
+    // Used for variable clicks, manual edits, and common settings changes.
+    const updatePreviewOnly = () => {
+        updateBatchNamePreview();
+    };
+
 
     const onFileLoaded = (fileName) => {
         // Update UI state to show all sections
@@ -22,17 +36,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate UI with data from the loaded file
         populateCommonSettings();
         initializePrompts();
-        initializePlotParams();
-        updateBatchNamePreview();
+        // Changing a plot parameter should suggest a new template
+        initializePlotParams(updateTemplateAndPreview);
+        // Trigger initial suggestion
+        updateTemplateAndPreview();
     };
     
-    // Set up the batch name preview and link it to common settings changes
-    const updateBatchNamePreview = () => initializeResults.updateBatchNamePreview();
-    initializeCommonSettingsEventListeners(updateBatchNamePreview);
+    // Common settings changes should only update the preview, not overwrite the template
+    initializeCommonSettingsEventListeners(updatePreviewOnly);
     
     // Initialize sections that are active from the start
     initializeFileHandler(onFileLoaded);
-    initializeResults.initializeBatchNameTemplate(updateBatchNamePreview);
+    // Variable button clicks and template edits should only update the preview
+    initializeResults(updatePreviewOnly);
 
     // Wire up the main generate button
     elements.generateBtn.addEventListener('click', () => {

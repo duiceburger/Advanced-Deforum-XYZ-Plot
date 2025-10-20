@@ -9,6 +9,7 @@ export const elements = {
     selectParamsSection: document.getElementById('selectParamsSection'),
     defineValuesSection: document.getElementById('defineValuesSection'),
     generateSection: document.getElementById('generateSection'),
+    customFilename: document.getElementById('customFilename'),
     batchNameTemplate: document.getElementById('batchNameTemplate'),
     batchNamePreview: document.getElementById('batchNamePreview'),
     variableButtons: document.querySelector('.variable-buttons'),
