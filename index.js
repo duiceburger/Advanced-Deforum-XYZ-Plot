@@ -30,8 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.fileInfo.style.display = 'block';
         elements.promptsSection.style.display = 'block';
         elements.commonSettingsSection.style.display = 'block';
-        elements.selectParamsSection.style.display = 'block';
-        elements.defineValuesSection.style.display = 'block';
+        elements.plotParamsSection.style.display = 'block';
         elements.initImageSection.style.display = 'block';
         elements.generateSection.style.display = 'block';
         

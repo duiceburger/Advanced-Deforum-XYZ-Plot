@@ -1,9 +1,36 @@
 // src/constants.js
 
-export const SAMPLERS = [
-    'euler', 'euler_a', 'lms', 'heun', 'dpm_2', 'dpm_2_a', 'dpmpp_2s_a', 
-    'dpmpp_2m', 'dpmpp_sde', 'ddim', 'uni_pc'
+export const SAMPLER_DETAILS = [
+    // Top 5 as requested
+    { category: 'Top Picks', name: 'DPM++ 2M Karras', displayName: 'DPM++ 2M Karras', description: 'A highly popular, fast, and high-quality solver. A common "best" choice for general use, balancing speed and detail.' },
+    { category: 'Top Picks', name: 'Euler a', displayName: 'Euler a', description: 'The ancestral version of Euler. Very popular for its artistic results, speed, and creative variation between steps.' },
+    { category: 'Top Picks', name: 'UniPC', displayName: 'UniPC', description: 'A newer, fast, and efficient sampler that is often recommended as a good all-arounder, similar to DPM++ 2M Karras.' },
+    { category: 'Top Picks', name: 'DPM++ SDE Karras', displayName: 'DPM++ SDE Karras', description: 'Uses a Stochastic Differential Equation (SDE) approach. Slower but often produces images with the highest level of detail, excellent at low step counts.' },
+    { category: 'Top Picks', name: 'Euler', displayName: 'Euler', description: 'The simplest, fastest, and most consistent (deterministic) solver. A great baseline for predictable animations.' },
+
+    // The rest of the list
+    { category: 'DPM Solvers (High Quality)', name: 'DPM++ 2M', displayName: 'DPM++ 2M', description: 'The non-Karras version of the popular 2M solver. Fast and high-quality.' },
+    { category: 'DPM Solvers (High Quality)', name: 'DPM++ SDE', displayName: 'DPM++ SDE', description: 'The non-Karras version of the SDE solver. Can produce high detail.' },
+    { category: 'DPM Solvers (High Quality)', name: 'DPM++ 2M SDE Karras', displayName: 'DPM++ 2M SDE Karras', description: 'A hybrid solver combining the speed of 2M and detail of SDE, with the Karras noise schedule.' },
+    { category: 'DPM Solvers (High Quality)', name: 'DPM2', displayName: 'DPM2', description: 'Second-order DPM-Solver. A solid choice, often improved by its Karras variant.' },
+    { category: 'DPM Solvers (High Quality)', name: 'DPM2 Karras', displayName: 'DPM2 Karras', description: 'DPM2 with the Karras noise schedule for improved quality.' },
+    { category: 'DPM Solvers (High Quality)', name: 'DPM Fast', displayName: 'DPM Fast', description: 'An aggressive, fast-stepping version of DPM, prioritizing speed.' },
+    { category: 'DPM Solvers (High Quality)', name: 'DPM Adaptive', displayName: 'DPM Adaptive', description: 'Adjusts the step size automatically. Can be slow as it ignores the user-defined step count.' },
+
+    { category: 'Ancestral Solvers (Stochastic)', name: 'DPM2 a', displayName: 'DPM2 a', description: 'The ancestral (stochastic) version of DPM2. Adds variation.' },
+    { category: 'Ancestral Solvers (Stochastic)', name: 'DPM2 a Karras', displayName: 'DPM2 a Karras', description: 'Ancestral DPM2 with the Karras noise schedule.' },
+    { category: 'Ancestral Solvers (Stochastic)', name: 'DPM++ 2S a', displayName: 'DPM++ 2S a', description: 'The ancestral variant of the DPM++ family. Adds high variation.' },
+    { category: 'Ancestral Solvers (Stochastic)', name: 'DPM++ 2S a Karras', displayName: 'DPM++ 2S a Karras', description: 'Ancestral DPM++ 2S with the Karras noise schedule.' },
+
+    { category: 'ODE Solvers (Deterministic)', name: 'Heun', displayName: 'Heun', description: 'A second-order improvement over Euler, offering higher accuracy but is about twice as slow per step.' },
+    { category: 'ODE Solvers (Deterministic)', name: 'LMS', displayName: 'LMS', description: '(Linear Multi-Step) Uses information from previous steps to be more accurate than Euler.' },
+    { category: 'ODE Solvers (Deterministic)', name: 'LMS Karras', displayName: 'LMS Karras', description: 'LMS with the Karras noise schedule for improved quality.' },
+    { category: 'ODE Solvers (Deterministic)', name: 'DDIM', displayName: 'DDIM', description: '(Denoising Diffusion Implicit Models) One of the original samplers. Fast and highly consistent, good for video.' },
+    { category: 'ODE Solvers (Deterministic)', name: 'PLMS', displayName: 'PLMS', description: '(Pseudo Linear Multi-Step) An improvement over DDIM, though often considered legacy.' },
+
+    { category: 'Specialized Solvers', name: 'LCM', displayName: 'LCM', description: '(Latent Consistency Model) A specialized technique that generates images in very few steps (4-8), sacrificing some quality for extreme speed.' },
 ];
+export const SAMPLERS = SAMPLER_DETAILS.map(s => s.name);
 export const SEED_BEHAVIORS = ['iter', 'fixed', 'random'];
 export const BORDER_MODES = ['wrap', 'replicate', 'reflect', 'zeros'];
 export const NOISE_TYPES = ['uniform', 'perlin'];

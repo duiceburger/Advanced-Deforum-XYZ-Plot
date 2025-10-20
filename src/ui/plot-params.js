@@ -1,8 +1,8 @@
 // src/ui/plot-params.js
 import { elements } from '../dom.js';
 import { getBaseSettings, getParameterList } from '../state.js';
-import { PARAMETER_GROUPS, SAMPLERS, PARAM_DESCRIPTIONS, PARAM_FRIENDLY_NAMES } from '../constants.js';
-import { getParamType, parseValueString } from '../utils.js';
+import { PARAMETER_GROUPS, SAMPLER_DETAILS, PARAM_DESCRIPTIONS, PARAM_FRIENDLY_NAMES } from '../constants.js';
+import { getParamType, parseValueString, generateSuggestedValues } from '../utils.js';
 
 function updateParamInfo(axis, paramName) {
     const infoEl = elements[`${axis}ParamInfo`];
@@ -26,25 +26,19 @@ function updateParamReminder(axis, paramName) {
     }
 
     const baseSettings = getBaseSettings();
-    let currentValue = baseSettings[paramName];
-    let currentValueDisplay = 'Not set in base file';
-
-    if (currentValue !== undefined) {
-        if (typeof currentValue === 'object' && currentValue !== null) {
-            currentValueDisplay = JSON.stringify(currentValue);
-        } else {
-            currentValueDisplay = String(currentValue);
-        }
-    }
+    const currentValue = baseSettings[paramName];
+    // Generate the suggestion based on the current value
+    const suggestion = generateSuggestedValues(paramName, currentValue);
         
     const friendlyName = PARAM_FRIENDLY_NAMES[paramName] || paramName;
     const description = PARAM_DESCRIPTIONS[paramName] || "No description available for this parameter.";
     
+    // Updated HTML structure
     reminderEl.innerHTML = `
         <strong>${friendlyName}</strong>
         <em>${description}</em>
-        <p class="current-value-display"><strong>Current Value:</strong> <code>${currentValueDisplay}</code></p>
-        <small>Enter the values you want to test for this parameter below.</small>
+        <p class="current-value-display"><strong>Suggested Values:</strong> <code>${suggestion}</code></p>
+        <small>You can copy this into the value field below or define your own range.</small>
     `;
     reminderEl.style.display = 'block';
 }
@@ -126,18 +120,17 @@ export function initializePlotParams(onUpdate) {
     
     document.querySelectorAll('.sampler-value-select').forEach(select => {
         select.innerHTML = '';
-        SAMPLERS.forEach(sampler => {
+        SAMPLER_DETAILS.forEach(sampler => {
             const option = document.createElement('option');
-            option.value = sampler;
-            option.textContent = sampler;
+            option.value = sampler.name;
+            option.textContent = sampler.displayName || sampler.name;
             select.appendChild(option);
         });
     });
 
     elements.enableZ.addEventListener('change', () => {
         const enabled = elements.enableZ.checked;
-        elements.zParamGroup.style.display = enabled ? 'block' : 'none';
-        elements.zValues.style.display = enabled ? 'block' : 'none';
+        elements.zAxisControls.style.display = enabled ? 'block' : 'none';
         onUpdate();
     });
 

@@ -37,61 +37,80 @@
             <div class="section" id="commonSettings" style="display: none;">
                 <h2>Step 2: Adjust Common Settings</h2>
                 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="seed">Seed</label>
-                        <input type="number" id="seed">
+                <fieldset class="settings-group group-sampling">
+                    <legend>Sampling & Generation</legend>
+                    <div class="sampler-container">
+                        <div class="form-group">
+                            <label for="sampler">Sampler</label>
+                            <select id="sampler"></select>
+                        </div>
+                        <div class="sampler-description-container">
+                             <label>Description</label>
+                             <p id="samplerDescription" class="param-info">- Select a sampler to see its description -</p>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="seed_behavior">Seed Behavior</label>
-                        <select id="seed_behavior"></select>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="seed">Seed</label>
+                            <input type="number" id="seed">
+                        </div>
+                        <div class="form-group">
+                            <label for="seed_behavior">Seed Behavior</label>
+                            <select id="seed_behavior"></select>
+                        </div>
+                         <div class="form-group">
+                            <label for="steps">Steps</label>
+                            <input type="number" id="steps" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="noise_type">Noise Type</label>
+                            <select id="noise_type"></select>
+                        </div>
+                         <div class="form-group">
+                            <label for="border_mode">Border Mode</label>
+                            <select id="border_mode"></select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="sampler">Sampler</label>
-                        <select id="sampler"></select>
-                    </div>
-                     <div class="form-group">
-                        <label for="steps">Steps</label>
-                        <input type="number" id="steps" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="noise_type">Noise Type</label>
-                        <select id="noise_type"></select>
-                    </div>
-                     <div class="form-group">
-                        <label for="border_mode">Border Mode</label>
-                        <select id="border_mode"></select>
-                    </div>
-                </div>
+                </fieldset>
 
-                <div class="form-group">
-                    <label for="strength_schedule">Strength Schedule</label>
-                    <input type="text" id="strength_schedule" placeholder="e.g., 0: (0.65)">
-                </div>
-                <div class="form-group">
-                    <label for="cfg_scale_schedule">CFG Scale Schedule</label>
-                    <input type="text" id="cfg_scale_schedule" placeholder="e.g., 0: (7)">
-                </div>
-                <div class="form-group">
-                    <label for="diffusion_cadence">Diffusion Cadence</label>
-                    <input type="text" id="diffusion_cadence" placeholder="e.g., 0: (1)">
-                </div>
+                <fieldset class="settings-group group-cohesion">
+                    <legend>Animation Cohesion</legend>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="strength_schedule">Strength Schedule</label>
+                            <input type="text" id="strength_schedule" placeholder="e.g., 0: (0.65)">
+                        </div>
+                        <div class="form-group">
+                            <label for="cfg_scale_schedule">CFG Scale Schedule</label>
+                            <input type="text" id="cfg_scale_schedule" placeholder="e.g., 0: (7)">
+                        </div>
+                        <div class="form-group">
+                            <label for="diffusion_cadence">Diffusion Cadence</label>
+                            <input type="text" id="diffusion_cadence" placeholder="e.g., 0: (1)">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="settings-group group-timing">
+                    <legend>Timing & Duration</legend>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="max_frames">Animation Length</label>
+                            <input type="number" id="max_frames" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="fps">FPS</label>
+                            <input type="number" id="fps" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Duration</label>
+                            <p id="durationDisplay" class="param-info">-</p>
+                        </div>
+                    </div>
+                </fieldset>
                 
-                 <div class="form-group">
-                    <label for="max_frames">Animation Length (max_frames)</label>
-                    <input type="number" id="max_frames" min="1">
-                </div>
-                <div class="form-group">
-                    <label for="fps">Frames Per Second (fps)</label>
-                    <input type="number" id="fps" min="1">
-                </div>
-                <div class="form-group">
-                    <label>Calculated Duration</label>
-                    <p id="durationDisplay" class="param-info">-</p>
-                </div>
-
-                <fieldset class="animation-mode-selector">
-                    <legend>Animation Mode</legend>
+                <fieldset class="settings-group group-motion">
+                    <legend>Animation Mode & Motion</legend>
                     <div class="radio-group">
                         <label><input type="radio" name="animation_mode" value="2D" checked> 2D</label>
                         <label><input type="radio" name="animation_mode" value="3D"> 3D</label>
@@ -152,59 +171,8 @@
         </div>
 
         <div class="column" id="column-right">
-            <div class="section" id="selectParamsSection" style="display: none;">
-                <h2>Step 4: Select Plot Parameters</h2>
-                <div class="form-group">
-                    <label for="xParam">X-Axis Parameter</label>
-                    <select id="xParam">
-                        <option value="">Select Parameter</option>
-                    </select>
-                    <div id="xParamPromptOptions" class="prompt-options" style="display: none;">
-                         <label for="xPromptMode">Prompt Mode:</label>
-                         <select id="xPromptMode" class="prompt-mode-select">
-                             <option value="override" selected>Override Prompts</option>
-                             <option value="append">Append to Positive Prompt</option>
-                         </select>
-                    </div>
-                    <div id="xParamInfo" class="param-info"></div>
-                </div>
-                <div class="form-group">
-                    <label for="yParam">Y-Axis Parameter</label>
-                    <select id="yParam">
-                        <option value="">Select Parameter</option>
-                    </select>
-                     <div id="yParamPromptOptions" class="prompt-options" style="display: none;">
-                         <label for="yPromptMode">Prompt Mode:</label>
-                         <select id="yPromptMode" class="prompt-mode-select">
-                             <option value="override" selected>Override Prompts</option>
-                             <option value="append">Append to Positive Prompt</option>
-                         </select>
-                    </div>
-                    <div id="yParamInfo" class="param-info"></div>
-                </div>
-                <div class="toggle-switch">
-                    <input type="checkbox" id="enableZ">
-                    <label for="enableZ">Enable Z-Axis (3D Plot)</label>
-                </div>
-                <div class="form-group" id="zParamGroup" style="display: none;">
-                    <label for="zParam">Z-Axis Parameter</label>
-                    <select id="zParam">
-                        <option value="">Select Parameter</option>
-                    </select>
-                    <div id="zParamPromptOptions" class="prompt-options" style="display: none;">
-                         <label for="zPromptMode">Prompt Mode:</label>
-                         <select id="zPromptMode" class="prompt-mode-select">
-                             <option value="override" selected>Override Prompts</option>
-                             <option value="append">Append to Positive Prompt</option>
-                         </select>
-                    </div>
-                    <div id="zParamInfo" class="param-info"></div>
-                </div>
-            </div>
-
-            <div class="section" id="defineValuesSection" style="display: none;">
-                <h2>Step 5: Define Plot Values</h2>
-                
+            <div class="section" id="plotParamsSection" style="display: none;">
+                <h2>Step 4: Define Plot Parameters & Values</h2>
                 <div class="examples">
                     <h4>Supported Value Formats</h4>
                     <pre>• "7" (Single number)</pre>
@@ -214,10 +182,23 @@
                     <pre>• "1-10 [5]" (Range with count)</pre>
                     <pre>• "true", "false", "value"</pre>
                 </div>
-                
-                <div id="value-containers">
+
+                <div class="axis-group">
+                    <div class="form-group">
+                        <label for="xParam">X-Axis Parameter</label>
+                        <select id="xParam">
+                            <option value="">Select Parameter</option>
+                        </select>
+                        <div id="xParamPromptOptions" class="prompt-options" style="display: none;">
+                             <label for="xPromptMode">Prompt Mode:</label>
+                             <select id="xPromptMode" class="prompt-mode-select">
+                                 <option value="override" selected>Override Prompts</option>
+                                 <option value="append">Append to Positive Prompt</option>
+                             </select>
+                        </div>
+                        <div id="xParamInfo" class="param-info"></div>
+                    </div>
                     <div id="xValues">
-                        <h3>X-Axis Values</h3>
                         <div class="param-reminder"></div>
                         <p class="value-hint">Select an X-Axis parameter to see input suggestions.</p>
                         <div id="xSamplerValuesContainer" class="sampler-values-container" style="display: none;">
@@ -233,9 +214,24 @@
                         </div>
                         <button type="button" id="addXValueBtn">Additional X Value Field</button>
                     </div>
-                    
-                    <div id="yValues">
-                        <h3>Y-Axis Values</h3>
+                </div>
+
+                <div class="axis-group">
+                    <div class="form-group">
+                        <label for="yParam">Y-Axis Parameter</label>
+                        <select id="yParam">
+                            <option value="">Select Parameter</option>
+                        </select>
+                         <div id="yParamPromptOptions" class="prompt-options" style="display: none;">
+                             <label for="yPromptMode">Prompt Mode:</label>
+                             <select id="yPromptMode" class="prompt-mode-select">
+                                 <option value="override" selected>Override Prompts</option>
+                                 <option value="append">Append to Positive Prompt</option>
+                             </select>
+                        </div>
+                        <div id="yParamInfo" class="param-info"></div>
+                    </div>
+                     <div id="yValues">
                         <div class="param-reminder"></div>
                         <p class="value-hint">Select a Y-Axis parameter to see input suggestions.</p>
                          <div id="ySamplerValuesContainer" class="sampler-values-container" style="display: none;">
@@ -251,29 +247,50 @@
                         </div>
                         <button type="button" id="addYValueBtn">Additional Y Value Field</button>
                     </div>
-                    
-                    <div id="zValues" style="display: none;">
-                        <h3>Z-Axis Values</h3>
-                        <div class="param-reminder"></div>
-                        <p class="value-hint">Select a Z-Axis parameter to see input suggestions.</p>
-                        <div id="zSamplerValuesContainer" class="sampler-values-container" style="display: none;">
-                            <label for="zSamplerValues">Select Samplers</label>
-                            <select multiple id="zSamplerValues" class="sampler-value-select"></select>
-                            <p class="param-info">Hold Ctrl/Cmd to select multiple values.</p>
-                        </div>
-                        <div id="zValueFields">
-                            <div class="input-group">
-                                <input type="text" placeholder="Value or Range" class="value-input z-value">
-                                <button type="button" class="remove-btn">Remove</button>
+                </div>
+
+                <div class="axis-group">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="enableZ">
+                        <label for="enableZ">Enable Z-Axis (3D Plot)</label>
+                    </div>
+                    <div id="zAxisControls" style="display: none;">
+                        <div class="form-group">
+                            <label for="zParam">Z-Axis Parameter</label>
+                            <select id="zParam">
+                                <option value="">Select Parameter</option>
+                            </select>
+                            <div id="zParamPromptOptions" class="prompt-options" style="display: none;">
+                                 <label for="zPromptMode">Prompt Mode:</label>
+                                 <select id="zPromptMode" class="prompt-mode-select">
+                                     <option value="override" selected>Override Prompts</option>
+                                     <option value="append">Append to Positive Prompt</option>
+                                 </select>
                             </div>
+                            <div id="zParamInfo" class="param-info"></div>
                         </div>
-                        <button type="button" id="addZValueBtn">Additional Z Value Field</button>
+                        <div id="zValues">
+                            <div class="param-reminder"></div>
+                            <p class="value-hint">Select a Z-Axis parameter to see input suggestions.</p>
+                            <div id="zSamplerValuesContainer" class="sampler-values-container" style="display: none;">
+                                <label for="zSamplerValues">Select Samplers</label>
+                                <select multiple id="zSamplerValues" class="sampler-value-select"></select>
+                                <p class="param-info">Hold Ctrl/Cmd to select multiple values.</p>
+                            </div>
+                            <div id="zValueFields">
+                                <div class="input-group">
+                                    <input type="text" placeholder="Value or Range" class="value-input z-value">
+                                    <button type="button" class="remove-btn">Remove</button>
+                                </div>
+                            </div>
+                            <button type="button" id="addZValueBtn">Additional Z Value Field</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="section" id="initImageSection" style="display: none;">
-                <h2>Step 6: Configure Init Settings (Optional)</h2>
+                <h2>Step 5: Configure Init Settings (Optional)</h2>
                 <div class="toggle-switch">
                     <input type="checkbox" id="use_init">
                     <label for="use_init">Use Init Image (`use_init`)</label>
@@ -296,7 +313,7 @@
             </div>
             
             <div class="section" id="generateSection" style="display: none;">
-                <h2>Step 7: Generate Settings</h2>
+                <h2>Step 6: Generate Settings</h2>
 
                 <div id="globalSettings">
                     <div class="batch-name-section">

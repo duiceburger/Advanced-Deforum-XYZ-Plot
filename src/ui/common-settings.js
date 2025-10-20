@@ -1,7 +1,7 @@
 // src/ui/common-settings.js
 import { commonSettingsElements, animationElements } from '../dom.js';
 import { getBaseSettings, updateBaseSetting } from '../state.js';
-import { SEED_BEHAVIORS, BORDER_MODES, NOISE_TYPES, SAMPLERS } from '../constants.js';
+import { SEED_BEHAVIORS, BORDER_MODES, NOISE_TYPES, SAMPLER_DETAILS } from '../constants.js';
 import { populateSelect } from '../utils.js';
 
 function updateDuration() {
@@ -22,6 +22,57 @@ function toggleAnimationModeView() {
     animationElements.container3D.style.display = (selectedMode === '3D') ? 'block' : 'none';
 }
 
+function updateSamplerDescription(samplerName) {
+    const samplerInfoEl = document.getElementById('samplerDescription');
+    const sampler = SAMPLER_DETAILS.find(s => s.name === samplerName);
+    if (sampler) {
+        samplerInfoEl.textContent = sampler.description;
+    } else if (samplerName) {
+        samplerInfoEl.textContent = 'No description available for this custom sampler.';
+    } else {
+        samplerInfoEl.textContent = '- Select a sampler to see its description -';
+    }
+}
+
+function populateSamplers(loadedSampler) {
+    const samplerSelect = commonSettingsElements.sampler;
+    samplerSelect.innerHTML = '';
+
+    // Create a mutable list of all samplers
+    const allSamplers = [...SAMPLER_DETAILS];
+    // If the sampler from the file isn't in our standard list, add it dynamically
+    if (loadedSampler && !allSamplers.some(s => s.name === loadedSampler)) {
+        allSamplers.push({ 
+            category: 'Loaded From File', 
+            name: loadedSampler, 
+            displayName: `${loadedSampler} (from file)`,
+            description: 'This sampler was loaded from your settings file.' 
+        });
+    }
+
+    // Group samplers by category for <optgroup>
+    const groupedSamplers = allSamplers.reduce((acc, sampler) => {
+        (acc[sampler.category] = acc[sampler.category] || []).push(sampler);
+        return acc;
+    }, {});
+
+    // Populate the select element with optgroups
+    for (const category in groupedSamplers) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = category;
+        groupedSamplers[category].forEach(sampler => {
+            const option = document.createElement('option');
+            option.value = sampler.name;
+            option.textContent = sampler.displayName || sampler.name;
+            optgroup.appendChild(option);
+        });
+        samplerSelect.appendChild(optgroup);
+    }
+
+    samplerSelect.value = loadedSampler;
+    updateSamplerDescription(loadedSampler);
+}
+
 export function populateCommonSettings() {
     const baseSettings = getBaseSettings();
     if (!baseSettings) return;
@@ -40,12 +91,8 @@ export function populateCommonSettings() {
     populateSelect(commonSettingsElements.border_mode, BORDER_MODES, baseSettings.border_mode || 'wrap');
     populateSelect(commonSettingsElements.noise_type, NOISE_TYPES, baseSettings.noise_type || 'uniform');
     
-    const loadedSampler = baseSettings.sampler;
-    const samplerOptions = [...SAMPLERS];
-    if (loadedSampler && !samplerOptions.includes(loadedSampler)) {
-        samplerOptions.unshift(loadedSampler);
-    }
-    populateSelect(commonSettingsElements.sampler, samplerOptions, loadedSampler || 'euler');
+    // Populate enhanced sampler dropdown
+    populateSamplers(baseSettings.sampler || 'euler');
     
     // Animation Mode and Motion
     const animationMode = baseSettings.animation_mode || '2D';
@@ -70,6 +117,9 @@ export function populateCommonSettings() {
 export function initializeCommonSettingsEventListeners(updateBatchNamePreview) {
     // Standard inputs
     Object.values(commonSettingsElements).forEach(element => {
+        // Skip the sampler as it has a custom listener now
+        if (element.id === 'sampler') return;
+        
         element.addEventListener('input', (e) => {
             const key = e.target.id;
             const value = e.target.value;
@@ -79,6 +129,14 @@ export function initializeCommonSettingsEventListeners(updateBatchNamePreview) {
             if (key === 'max_frames' || key === 'fps') updateDuration();
             updateBatchNamePreview();
         });
+    });
+
+    // Custom listener for sampler to update description
+    commonSettingsElements.sampler.addEventListener('input', (e) => {
+        const value = e.target.value;
+        updateBaseSetting('sampler', value);
+        updateSamplerDescription(value);
+        updateBatchNamePreview();
     });
 
     // Motion inputs
