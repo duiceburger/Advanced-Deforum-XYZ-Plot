@@ -30,7 +30,7 @@ function generateFilename(settings, plotParams) {
         steps: settings.steps,
         cfg_scale: cleanValue(settings.cfg_scale),
         sampler: cleanValue(settings.sampler),
-        strength: cleanValue(settings.strength_schedule),
+        strength: cleanValue(settings.strength),
         max_frames: settings.max_frames,
     };
 
@@ -41,7 +41,7 @@ function generateFilename(settings, plotParams) {
     return template + '.txt';
 }
 
-export function generateSettings(getPromptsObject, getValuesForAxis) {
+export function generateSettings(getPromptsObject, getValuesForAxis, getInitImageSettings) {
     const xParam = elements.xParam.value;
     const yParam = elements.yParam.value;
     const zParam = elements.enableZ.checked ? elements.zParam.value : null;
@@ -59,15 +59,32 @@ export function generateSettings(getPromptsObject, getValuesForAxis) {
     const baseSettings = getBaseSettings();
     const commonOverrides = getCommonOverrides();
     const basePrompts = getPromptsObject();
+    const initImageSettings = getInitImageSettings();
     const generatedSettings = [];
+    
+    // Create a new base that includes the common settings from the UI
+    let effectiveBase = { ...baseSettings, ...commonOverrides };
+
+    // Apply the UI's init settings to this new base
+    if (initImageSettings.use_init) {
+        effectiveBase.use_init = true;
+        effectiveBase.init_image = initImageSettings.init_image;
+        effectiveBase.strength = initImageSettings.strength;
+    } else {
+        effectiveBase.use_init = false;
+        delete effectiveBase.init_image;
+        delete effectiveBase.strength;
+    }
 
     for (const zVal of zValues) {
         for (const yVal of yValues) {
             for (const xVal of xValues) {
-                const newSettings = { ...baseSettings, ...commonOverrides };
+                // Each iteration starts with the effective base
+                let newSettings = { ...effectiveBase };
                 
                 let currentPrompts = JSON.parse(JSON.stringify(basePrompts));
 
+                // Apply plot parameter overrides
                 [
                     { param: xParam, value: xVal, axis: 'x' },
                     { param: yParam, value: yVal, axis: 'y' },
@@ -101,6 +118,12 @@ export function generateSettings(getPromptsObject, getValuesForAxis) {
                 
                 newSettings.prompts = currentPrompts;
                  
+                // Final cleanup: if use_init was plotted to false, remove related keys
+                if (newSettings.use_init === false) {
+                    delete newSettings.init_image;
+                    delete newSettings.strength;
+                }
+                
                 const meta = {
                     generated_by: "Deforum-XYZ-Plot",
                     generated_at: new Date().toUTCString(),

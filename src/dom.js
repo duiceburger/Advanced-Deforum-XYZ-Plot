@@ -8,6 +8,7 @@ export const elements = {
     commonSettingsSection: document.getElementById('commonSettings'),
     selectParamsSection: document.getElementById('selectParamsSection'),
     defineValuesSection: document.getElementById('defineValuesSection'),
+    initImageSection: document.getElementById('initImageSection'),
     generateSection: document.getElementById('generateSection'),
     customFilename: document.getElementById('customFilename'),
     batchNameTemplate: document.getElementById('batchNameTemplate'),
@@ -58,9 +59,7 @@ export const commonSettingsElements = {
     border_mode: document.getElementById('border_mode'),
     strength_schedule: document.getElementById('strength_schedule'),
     cfg_scale_schedule: document.getElementById('cfg_scale_schedule'),
-    noise_schedule: document.getElementById('noise_schedule'),
     diffusion_cadence: document.getElementById('diffusion_cadence'),
-    color_coherence: document.getElementById('color_coherence'),
 };
 
 export const animationElements = {
@@ -77,4 +76,13 @@ export const animationElements = {
     rotation_3d_x: document.getElementById('rotation_3d_x'),
     rotation_3d_y: document.getElementById('rotation_3d_y'),
     rotation_3d_z: document.getElementById('rotation_3d_z'),
+};
+
+export const initImageElements = {
+    useInitToggle: document.getElementById('use_init'),
+    controlsContainer: document.getElementById('initImageControls'),
+    pathInput: document.getElementById('init_image'),
+    strengthInput: document.getElementById('strength'),
+    previewContainer: document.getElementById('initImagePreviewContainer'),
+    previewImage: document.getElementById('initImagePreview'),
 };

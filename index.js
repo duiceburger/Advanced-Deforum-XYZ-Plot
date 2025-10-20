@@ -5,6 +5,7 @@ import { initializePrompts, getPromptsObject } from './src/ui/prompts.js';
 import { populateCommonSettings, initializeCommonSettingsEventListeners } from './src/ui/common-settings.js';
 import { initializePlotParams, getValuesForAxis } from './src/ui/plot-params.js';
 import { initializeResults, displayResults, updateSuggestedTemplate, updateBatchNamePreview } from './src/ui/results.js';
+import { initializeInitImage, populateInitImage, getInitImageSettings } from './src/ui/init-image.js';
 import { generateSettings } from './src/core/generator.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -31,11 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.commonSettingsSection.style.display = 'block';
         elements.selectParamsSection.style.display = 'block';
         elements.defineValuesSection.style.display = 'block';
+        elements.initImageSection.style.display = 'block';
         elements.generateSection.style.display = 'block';
         
         // Populate UI with data from the loaded file
         populateCommonSettings();
         initializePrompts();
+        populateInitImage();
         // Changing a plot parameter should suggest a new template
         initializePlotParams(updateTemplateAndPreview);
         // Trigger initial suggestion
@@ -47,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize sections that are active from the start
     initializeFileHandler(onFileLoaded);
+    initializeInitImage();
     // Variable button clicks and template edits should only update the preview
     initializeResults(updatePreviewOnly);
 
@@ -61,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const generated = generateSettings(
                     getPromptsObject,
-                    getValuesForAxis
+                    getValuesForAxis,
+                    getInitImageSettings
                 );
                 displayResults(generated);
             } catch (error) {

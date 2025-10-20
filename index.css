@@ -219,6 +219,21 @@ button:disabled {
     font-style: normal;
     color: #e0e0e0;
 }
+.param-reminder .current-value-display {
+    margin: 8px 0;
+    font-size: 0.9em;
+    color: #e0e0e0;
+}
+.param-reminder .current-value-display strong {
+    color: #2196F3;
+}
+.param-reminder .current-value-display code {
+    background-color: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    color: #66ff66;
+}
 .param-reminder small {
     color: #aaa;
 }
@@ -315,6 +330,13 @@ option {
     color: #e0e0e0;
     padding: 2px 5px;
 }
+.param-variable-name {
+    color: #ff9800; /* Orange */
+    font-family: monospace;
+    font-size: 0.9em;
+    margin-left: 8px;
+    opacity: 0.8;
+}
 
 /* Sampler specific styles */
 .sampler-values-container {
@@ -408,4 +430,17 @@ option {
 .prompt-options select {
     width: auto;
     flex-grow: 1;
+}
+
+/* Init Image Preview */
+#initImagePreviewContainer {
+    margin-top: 15px;
+    max-width: 100%;
+}
+#initImagePreview {
+    max-width: 100%;
+    max-height: 400px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
 }

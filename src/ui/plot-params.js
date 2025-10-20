@@ -1,7 +1,7 @@
 // src/ui/plot-params.js
 import { elements } from '../dom.js';
 import { getBaseSettings, getParameterList } from '../state.js';
-import { PARAMETER_GROUPS, SAMPLERS, PARAM_DESCRIPTIONS } from '../constants.js';
+import { PARAMETER_GROUPS, SAMPLERS, PARAM_DESCRIPTIONS, PARAM_FRIENDLY_NAMES } from '../constants.js';
 import { getParamType, parseValueString } from '../utils.js';
 
 function updateParamInfo(axis, paramName) {
@@ -24,10 +24,26 @@ function updateParamReminder(axis, paramName) {
         reminderEl.style.display = 'none';
         return;
     }
+
+    const baseSettings = getBaseSettings();
+    let currentValue = baseSettings[paramName];
+    let currentValueDisplay = 'Not set in base file';
+
+    if (currentValue !== undefined) {
+        if (typeof currentValue === 'object' && currentValue !== null) {
+            currentValueDisplay = JSON.stringify(currentValue);
+        } else {
+            currentValueDisplay = String(currentValue);
+        }
+    }
+        
+    const friendlyName = PARAM_FRIENDLY_NAMES[paramName] || paramName;
     const description = PARAM_DESCRIPTIONS[paramName] || "No description available for this parameter.";
+    
     reminderEl.innerHTML = `
-        <strong>${paramName}</strong>
+        <strong>${friendlyName}</strong>
         <em>${description}</em>
+        <p class="current-value-display"><strong>Current Value:</strong> <code>${currentValueDisplay}</code></p>
         <small>Enter the values you want to test for this parameter below.</small>
     `;
     reminderEl.style.display = 'block';
@@ -95,9 +111,10 @@ export function initializePlotParams(onUpdate) {
             optgroup.label = groupName;
             PARAMETER_GROUPS[groupName].forEach(param => {
                 if (parameterList.includes(param)) {
+                    const friendlyName = PARAM_FRIENDLY_NAMES[param] || param;
                     const option = document.createElement('option');
                     option.value = param;
-                    option.textContent = param;
+                    option.innerHTML = `${friendlyName} <span class="param-variable-name">(${param})</span>`;
                     optgroup.appendChild(option);
                 }
             });

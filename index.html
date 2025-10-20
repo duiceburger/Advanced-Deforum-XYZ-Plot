@@ -73,16 +73,8 @@
                     <input type="text" id="cfg_scale_schedule" placeholder="e.g., 0: (7)">
                 </div>
                 <div class="form-group">
-                    <label for="noise_schedule">Noise Schedule</label>
-                    <input type="text" id="noise_schedule" placeholder="e.g., 0: (0.02)">
-                </div>
-                <div class="form-group">
                     <label for="diffusion_cadence">Diffusion Cadence</label>
                     <input type="text" id="diffusion_cadence" placeholder="e.g., 0: (1)">
-                </div>
-                 <div class="form-group">
-                    <label for="color_coherence">Color Coherence</label>
-                    <input type="text" id="color_coherence" placeholder="e.g., 'Match Frame 0 LAB'">
                 </div>
                 
                  <div class="form-group">
@@ -279,9 +271,32 @@
                     </div>
                 </div>
             </div>
+
+            <div class="section" id="initImageSection" style="display: none;">
+                <h2>Step 6: Configure Init Settings (Optional)</h2>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="use_init">
+                    <label for="use_init">Use Init Image (`use_init`)</label>
+                </div>
+                <div id="initImageControls" style="display: none;">
+                    <div class="form-group">
+                        <label for="init_image">Init Image URL or Path</label>
+                        <input type="text" id="init_image" placeholder="Paste image URL or file path...">
+                        <p class="param-info">Enter a web URL to see a preview. For local files, enter the path as Deforum expects it (e.g., 'init_images/my_image.png').</p>
+                    </div>
+                     <div class="form-group">
+                        <label for="strength">Strength</label>
+                        <input type="text" id="strength" placeholder="e.g., 0.8">
+                        <p class="param-info">Controls how much the init image influences the first frame. A value of 1.0 will not change the image at all.</p>
+                    </div>
+                    <div id="initImagePreviewContainer" style="display: none;">
+                        <img id="initImagePreview" src="" alt="Init Image Preview">
+                    </div>
+                </div>
+            </div>
             
             <div class="section" id="generateSection" style="display: none;">
-                <h2>Step 6: Generate Settings</h2>
+                <h2>Step 7: Generate Settings</h2>
 
                 <div id="globalSettings">
                     <div class="batch-name-section">
