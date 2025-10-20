@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deforum X/Y/Z Plot Generator</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <h1>Deforum X/Y/Z Plot Generator</h1>
+    
+    <div class="main-container">
+        <div class="column" id="column-left">
+            <div class="section" id="step1">
+                <h2>Step 1: Upload Base Settings</h2>
+                <div class="form-group">
+                    <div id="dropZone" class="drop-zone">
+                        <p>Drag & Drop Deforum Settings File Here</p>
+                        <p>or</p>
+                        <label for="settingsFile" class="button-like-label">Click to Upload</label>
+                        <input type="file" id="settingsFile" accept=".txt,.json" hidden>
+                    </div>
+                    <div id="fileInfo" class="file-info" style="display: none;"></div>
+                </div>
+                
+                <div id="globalSettings" style="display: none;">
+                    <div class="batch-name-section">
+                        <h4>Batch Name Template</h4>
+                        <div class="form-group">
+                            <label for="batchNameTemplate">Template</label>
+                            <input type="text" id="batchNameTemplate" value="{timestring}_512-circle_seed_{seed}_{seed_behavior}_{w}x{h}_{x_param}-{x_value}_{y_param}-{y_value}" placeholder="Enter batch name template">
+                            <div class="examples">
+                                <h4>Available Variables</h4>
+                                <p>Click any variable below to add it to your template:</p>
+                                <div class="variable-buttons">
+                                    <button type="button" class="variable-btn" data-variable="{timestring}">{timestring}</button>
+                                    <button type="button" class="variable-btn" data-variable="{seed}">{seed}</button>
+                                    <button type="button" class="variable-btn" data-variable="{seed_behavior}">{seed_behavior}</button>
+                                    <button type="button" class="variable-btn" data-variable="{w}">{w}</button>
+                                    <button type="button" class="variable-btn" data-variable="{h}">{h}</button>
+                                    <button type="button" class="variable-btn" data-variable="{x_param}">{x_param}</button>
+                                    <button type="button" class="variable-btn" data-variable="{x_value}">{x_value}</button>
+                                    <button type="button" class="variable-btn" data-variable="{y_param}">{y_param}</button>
+                                    <button type="button" class="variable-btn" data-variable="{y_value}">{y_value}</button>
+                                    <button type="button" class="variable-btn" data-variable="{z_param}">{z_param}</button>
+                                    <button type="button" class="variable-btn" data-variable="{z_value}">{z_value}</button>
+                                    <button type="button" class="variable-btn" data-variable="{steps}">{steps}</button>
+                                    <button type="button" class="variable-btn" data-variable="{cfg_scale}">{cfg_scale}</button>
+                                    <button type="button" class="variable-btn" data-variable="{sampler}">{sampler}</button>
+                                    <button type="button" class="variable-btn" data-variable="{strength}">{strength}</button>
+                                    <button type="button" class="variable-btn" data-variable="{max_frames}">{max_frames}</button>
+                                </div>
+                                <div id="batchNamePreview" class="preview-text">Preview will appear here...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Step 2: Select Parameters</h2>
+                <div class="form-group">
+                    <label for="xParam">X-Axis Parameter</label>
+                    <select id="xParam">
+                        <option value="">Select Parameter</option>
+                    </select>
+                    <div id="xParamInfo" class="param-info"></div>
+                </div>
+                <div class="form-group">
+                    <label for="yParam">Y-Axis Parameter</label>
+                    <select id="yParam">
+                        <option value="">Select Parameter</option>
+                    </select>
+                    <div id="yParamInfo" class="param-info"></div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="enableZ">
+                    <label for="enableZ">Enable Z-Axis (3D Plot)</label>
+                </div>
+                <div class="form-group" id="zParamGroup" style="display: none;">
+                    <label for="zParam">Z-Axis Parameter</label>
+                    <select id="zParam">
+                        <option value="">Select Parameter</option>
+                    </select>
+                    <div id="zParamInfo" class="param-info"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column" id="column-right">
+            <div class="section">
+                <h2>Step 3: Define Values</h2>
+                
+                <div class="examples">
+                    <h4>Supported Value Formats</h4>
+                    <pre>• "1-5" (Simple range)</pre>
+                    <pre>• "1-5 (+2)" (Range with step)</pre>
+                    <pre>• "1-10 [5]" (Range with count)</pre>
+                    <pre>• "true", "false", "value"</pre>
+                </div>
+                
+                <div class="schedule-info">
+                    <strong>Schedule Parameter Detection:</strong> Parameters like `strength_schedule` are auto-detected and values will be formatted as `0: (value)`.
+                </div>
+                
+                <div id="value-containers">
+                    <div id="xValues">
+                        <h3>X-Axis Values</h3>
+                        <div id="xValueFields">
+                            <div class="input-group">
+                                <input type="text" placeholder="Value or Range (e.g., 1-5)" class="value-input x-value">
+                                <button type="button" class="remove-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addXValueBtn">Add X Value</button>
+                    </div>
+                    
+                    <div id="yValues">
+                        <h3>Y-Axis Values</h3>
+                        <div id="yValueFields">
+                            <div class="input-group">
+                                <input type="text" placeholder="Value or Range (e.g., 7-12)" class="value-input y-value">
+                                <button type="button" class="remove-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addYValueBtn">Add Y Value</button>
+                    </div>
+                    
+                    <div id="zValues" style="display: none;">
+                        <h3>Z-Axis Values</h3>
+                        <div id="zValueFields">
+                            <div class="input-group">
+                                <input type="text" placeholder="Value or Range (e.g., 0-1 [5])" class="value-input z-value">
+                                <button type="button" class="remove-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addZValueBtn">Add Z Value</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Step 4: Generate Settings</h2>
+                <div class="generate-controls">
+                    <button type="button" id="generateBtn">Generate Plot Settings</button>
+                    <div id="loadingSpinner" class="spinner" style="display: none;"></div>
+                </div>
+                
+                <div id="results" style="display: none;">
+                    <h3>Generated Settings Files</h3>
+                    <p><span id="fileCount">0</span> files generated</p>
+                    <button type="button" id="downloadBtn">Download All as .zip</button>
+                    <div id="fileList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script type="module" src="index.tsx"></script>
+</body>
+</html>

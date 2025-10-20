@@ -1,0 +1,5 @@
+{
+  "name": "Deforum-XYZ-Plot",
+  "description": "A browser-based tool for generating batches of Deforum settings files with parametric variations for animation experiments.",
+  "requestFramePermissions": []
+}
