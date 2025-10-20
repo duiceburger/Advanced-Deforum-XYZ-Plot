@@ -9,8 +9,8 @@
 {
   "imports": {
     "path": "https://aistudiocdn.com/path@^0.12.7",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
     "vite": "https://aistudiocdn.com/vite@^7.1.11",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
     "url": "https://aistudiocdn.com/url@^0.11.4"
   }
 }
@@ -32,10 +32,238 @@
                     </div>
                     <div id="fileInfo" class="file-info" style="display: none;"></div>
                 </div>
+            </div>
+
+            <div class="section" id="commonSettings" style="display: none;">
+                <h2>Step 2: Adjust Common Settings</h2>
                 
-                <div id="globalSettings" style="display: none;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="seed">Seed</label>
+                        <input type="number" id="seed">
+                    </div>
+                    <div class="form-group">
+                        <label for="seed_behavior">Seed Behavior</label>
+                        <select id="seed_behavior"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sampler">Sampler</label>
+                        <select id="sampler"></select>
+                    </div>
+                     <div class="form-group">
+                        <label for="steps">Steps</label>
+                        <input type="number" id="steps" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="noise_type">Noise Type</label>
+                        <select id="noise_type"></select>
+                    </div>
+                     <div class="form-group">
+                        <label for="border_mode">Border Mode</label>
+                        <select id="border_mode"></select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="strength_schedule">Strength Schedule</label>
+                    <input type="text" id="strength_schedule" placeholder="e.g., 0: (0.65)">
+                </div>
+                <div class="form-group">
+                    <label for="cfg_scale_schedule">CFG Scale Schedule</label>
+                    <input type="text" id="cfg_scale_schedule" placeholder="e.g., 0: (7)">
+                </div>
+                <div class="form-group">
+                    <label for="noise_schedule">Noise Schedule</label>
+                    <input type="text" id="noise_schedule" placeholder="e.g., 0: (0.02)">
+                </div>
+                <div class="form-group">
+                    <label for="diffusion_cadence">Diffusion Cadence</label>
+                    <input type="text" id="diffusion_cadence" placeholder="e.g., 0: (1)">
+                </div>
+                 <div class="form-group">
+                    <label for="color_coherence">Color Coherence</label>
+                    <input type="text" id="color_coherence" placeholder="e.g., 'Match Frame 0 LAB'">
+                </div>
+                
+                 <div class="form-group">
+                    <label for="max_frames">Animation Length (max_frames)</label>
+                    <input type="number" id="max_frames" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="fps">Frames Per Second (fps)</label>
+                    <input type="number" id="fps" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Calculated Duration</label>
+                    <p id="durationDisplay" class="param-info">-</p>
+                </div>
+
+                <fieldset class="animation-mode-selector">
+                    <legend>Animation Mode</legend>
+                    <div class="radio-group">
+                        <label><input type="radio" name="animation_mode" value="2D" checked> 2D</label>
+                        <label><input type="radio" name="animation_mode" value="3D"> 3D</label>
+                    </div>
+                    
+                    <div id="animationMode2DContainer" class="motion-params-container">
+                        <h4>2D Motion Parameters</h4>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="zoom_2d">Zoom</label><input type="text" id="zoom_2d" placeholder="0: (1.04)"></div>
+                            <div class="form-group"><label for="translation_x_2d">Translation X</label><input type="text" id="translation_x_2d" placeholder="0: (0)"></div>
+                            <div class="form-group"><label for="translation_y_2d">Translation Y</label><input type="text" id="translation_y_2d" placeholder="0: (0)"></div>
+                            <div class="form-group"><label for="rotation_2d">Rotation</label><input type="text" id="rotation_2d" placeholder="0: (0)"></div>
+                        </div>
+                    </div>
+
+                    <div id="animationMode3DContainer" class="motion-params-container" style="display:none;">
+                        <h4>3D Motion Parameters</h4>
+                        <div class="form-grid">
+                             <div class="form-group"><label for="translation_x_3d">Translation X</label><input type="text" id="translation_x_3d" placeholder="0: (0)"></div>
+                            <div class="form-group"><label for="translation_y_3d">Translation Y</label><input type="text" id="translation_y_3d" placeholder="0: (0)"></div>
+                            <div class="form-group"><label for="translation_z_3d">Translation Z</label><input type="text" id="translation_z_3d" placeholder="0: (1.75)"></div>
+                            <div class="form-group"><label for="rotation_3d_x">Rotation X</label><input type="text" id="rotation_3d_x" placeholder="0: (0)"></div>
+                            <div class="form-group"><label for="rotation_3d_y">Rotation Y</label><input type="text" id="rotation_3d_y" placeholder="0: (0)"></div>
+                            <div class="form-group"><label for="rotation_3d_z">Rotation Z</label><input type="text" id="rotation_3d_z" placeholder="0: (0)"></div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="section" id="promptsSection" style="display: none;">
+                <h2>Step 3: Configure Prompts</h2>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="animatePrompts">
+                    <label for="animatePrompts">Animate Prompts</label>
+                </div>
+                
+                <div id="fixedPromptsContainer">
+                    <div class="form-group">
+                        <label for="positivePrompt">Positive Prompt</label>
+                        <textarea id="positivePrompt" rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="negativePrompt">Negative Prompt</label>
+                        <textarea id="negativePrompt" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div id="animatedPromptsContainer" style="display: none;">
+                     <div class="form-group">
+                        <label for="prompts">Animation Prompts (JSON)</label>
+                        <textarea id="prompts" rows="10"></textarea>
+                        <p class="param-info">Content must be valid JSON. Invalid format will be ignored during generation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column" id="column-right">
+            <div class="section" id="selectParamsSection" style="display: none;">
+                <h2>Step 4: Select Plot Parameters</h2>
+                <div class="form-group">
+                    <label for="xParam">X-Axis Parameter</label>
+                    <select id="xParam">
+                        <option value="">Select Parameter</option>
+                    </select>
+                    <div id="xParamInfo" class="param-info"></div>
+                </div>
+                <div class="form-group">
+                    <label for="yParam">Y-Axis Parameter</label>
+                    <select id="yParam">
+                        <option value="">Select Parameter</option>
+                    </select>
+                    <div id="yParamInfo" class="param-info"></div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="enableZ">
+                    <label for="enableZ">Enable Z-Axis (3D Plot)</label>
+                </div>
+                <div class="form-group" id="zParamGroup" style="display: none;">
+                    <label for="zParam">Z-Axis Parameter</label>
+                    <select id="zParam">
+                        <option value="">Select Parameter</option>
+                    </select>
+                    <div id="zParamInfo" class="param-info"></div>
+                </div>
+            </div>
+
+            <div class="section" id="defineValuesSection" style="display: none;">
+                <h2>Step 5: Define Plot Values</h2>
+                
+                <div class="examples">
+                    <h4>Supported Value Formats</h4>
+                    <pre>• "7" (Single number)</pre>
+                    <pre>• "1, 2, 5" (Comma-separated list)</pre>
+                    <pre>• "1-5" (Simple range)</pre>
+                    <pre>• "1-5 (+2)" (Range with step)</pre>
+                    <pre>• "1-10 [5]" (Range with count)</pre>
+                    <pre>• "true", "false", "value"</pre>
+                </div>
+                
+                <div id="value-containers">
+                    <div id="xValues">
+                        <h3>X-Axis Values</h3>
+                        <div class="param-reminder"></div>
+                        <p class="value-hint">Select an X-Axis parameter to see input suggestions.</p>
+                        <div id="xSamplerValuesContainer" class="sampler-values-container" style="display: none;">
+                            <label for="xSamplerValues">Select Samplers</label>
+                            <select multiple id="xSamplerValues" class="sampler-value-select"></select>
+                            <p class="param-info">Hold Ctrl/Cmd to select multiple values.</p>
+                        </div>
+                        <div id="xValueFields">
+                            <div class="input-group">
+                                <input type="text" placeholder="Value or Range" class="value-input x-value">
+                                <button type="button" class="remove-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addXValueBtn">Additional X Value Field</button>
+                    </div>
+                    
+                    <div id="yValues">
+                        <h3>Y-Axis Values</h3>
+                        <div class="param-reminder"></div>
+                        <p class="value-hint">Select a Y-Axis parameter to see input suggestions.</p>
+                         <div id="ySamplerValuesContainer" class="sampler-values-container" style="display: none;">
+                            <label for="ySamplerValues">Select Samplers</label>
+                            <select multiple id="ySamplerValues" class="sampler-value-select"></select>
+                            <p class="param-info">Hold Ctrl/Cmd to select multiple values.</p>
+                        </div>
+                        <div id="yValueFields">
+                            <div class="input-group">
+                                <input type="text" placeholder="Value or Range" class="value-input y-value">
+                                <button type="button" class="remove-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addYValueBtn">Additional Y Value Field</button>
+                    </div>
+                    
+                    <div id="zValues" style="display: none;">
+                        <h3>Z-Axis Values</h3>
+                        <div class="param-reminder"></div>
+                        <p class="value-hint">Select a Z-Axis parameter to see input suggestions.</p>
+                        <div id="zSamplerValuesContainer" class="sampler-values-container" style="display: none;">
+                            <label for="zSamplerValues">Select Samplers</label>
+                            <select multiple id="zSamplerValues" class="sampler-value-select"></select>
+                            <p class="param-info">Hold Ctrl/Cmd to select multiple values.</p>
+                        </div>
+                        <div id="zValueFields">
+                            <div class="input-group">
+                                <input type="text" placeholder="Value or Range" class="value-input z-value">
+                                <button type="button" class="remove-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addZValueBtn">Additional Z Value Field</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section" id="generateSection" style="display: none;">
+                <h2>Step 6: Generate Settings</h2>
+
+                <div id="globalSettings">
                     <div class="batch-name-section">
-                        <h4>Batch Name Template</h4>
+                        <h4>Output Filename Template</h4>
+                        <p class="param-info">This template defines the filename for each generated settings file. Use the variables below to create unique, descriptive names.</p>
                         <div class="form-group">
                             <label for="batchNameTemplate">Template</label>
                             <input type="text" id="batchNameTemplate" value="{timestring}_512-circle_seed_{seed}_{seed_behavior}_{w}x{h}_{x_param}-{x_value}_{y_param}-{y_value}" placeholder="Enter batch name template">
@@ -65,92 +293,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="section">
-                <h2>Step 2: Select Parameters</h2>
-                <div class="form-group">
-                    <label for="xParam">X-Axis Parameter</label>
-                    <select id="xParam">
-                        <option value="">Select Parameter</option>
-                    </select>
-                    <div id="xParamInfo" class="param-info"></div>
-                </div>
-                <div class="form-group">
-                    <label for="yParam">Y-Axis Parameter</label>
-                    <select id="yParam">
-                        <option value="">Select Parameter</option>
-                    </select>
-                    <div id="yParamInfo" class="param-info"></div>
-                </div>
-                <div class="toggle-switch">
-                    <input type="checkbox" id="enableZ">
-                    <label for="enableZ">Enable Z-Axis (3D Plot)</label>
-                </div>
-                <div class="form-group" id="zParamGroup" style="display: none;">
-                    <label for="zParam">Z-Axis Parameter</label>
-                    <select id="zParam">
-                        <option value="">Select Parameter</option>
-                    </select>
-                    <div id="zParamInfo" class="param-info"></div>
-                </div>
-            </div>
-        </div>
 
-        <div class="column" id="column-right">
-            <div class="section">
-                <h2>Step 3: Define Values</h2>
-                
-                <div class="examples">
-                    <h4>Supported Value Formats</h4>
-                    <pre>• "1-5" (Simple range)</pre>
-                    <pre>• "1-5 (+2)" (Range with step)</pre>
-                    <pre>• "1-10 [5]" (Range with count)</pre>
-                    <pre>• "true", "false", "value"</pre>
-                </div>
-                
-                <div class="schedule-info">
-                    <strong>Schedule Parameter Detection:</strong> Parameters like `strength_schedule` are auto-detected and values will be formatted as `0: (value)`.
-                </div>
-                
-                <div id="value-containers">
-                    <div id="xValues">
-                        <h3>X-Axis Values</h3>
-                        <div id="xValueFields">
-                            <div class="input-group">
-                                <input type="text" placeholder="Value or Range (e.g., 1-5)" class="value-input x-value">
-                                <button type="button" class="remove-btn">Remove</button>
-                            </div>
-                        </div>
-                        <button type="button" id="addXValueBtn">Add X Value</button>
-                    </div>
-                    
-                    <div id="yValues">
-                        <h3>Y-Axis Values</h3>
-                        <div id="yValueFields">
-                            <div class="input-group">
-                                <input type="text" placeholder="Value or Range (e.g., 7-12)" class="value-input y-value">
-                                <button type="button" class="remove-btn">Remove</button>
-                            </div>
-                        </div>
-                        <button type="button" id="addYValueBtn">Add Y Value</button>
-                    </div>
-                    
-                    <div id="zValues" style="display: none;">
-                        <h3>Z-Axis Values</h3>
-                        <div id="zValueFields">
-                            <div class="input-group">
-                                <input type="text" placeholder="Value or Range (e.g., 0-1 [5])" class="value-input z-value">
-                                <button type="button" class="remove-btn">Remove</button>
-                            </div>
-                        </div>
-                        <button type="button" id="addZValueBtn">Add Z Value</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="section">
-                <h2>Step 4: Generate Settings</h2>
                 <div class="generate-controls">
                     <button type="button" id="generateBtn">Generate Plot Settings</button>
                     <div id="loadingSpinner" class="spinner" style="display: none;"></div>
