@@ -1,487 +1,464 @@
-// JSZip and saveAs are loaded from script tags in index.html
+// Deforum XYZ Plot Generator - Main Application Logic
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Global variables
-    let baseSettings = null;
+    // State
+    let baseSettings = {};
     let parameterList = [];
-    let parameterTypes = {};
     let generatedSettings = [];
-    let zEnabled = false;
-    const scheduleParameters = new Set([
-        'strength_schedule', 'cfg_scale_schedule', 'noise_schedule', 'contrast_schedule',
-        'zoom', 'angle', 'translation_x', 'translation_y', 'translation_z',
-        'rotation_3d_x', 'rotation_3d_y', 'rotation_3d_z', 'perspective_flip_theta',
-        'perspective_flip_phi', 'perspective_flip_gamma', 'perspective_flip_fv'
-    ]);
 
-    // DOM Elements
-    const dropZone = document.getElementById('dropZone');
-    const settingsFileInput = document.getElementById('settingsFile');
-    const fileInfoDiv = document.getElementById('fileInfo');
-    const batchNameTemplateInput = document.getElementById('batchNameTemplate');
-    const xParamSelect = document.getElementById('xParam');
-    const yParamSelect = document.getElementById('yParam');
-    const zParamSelect = document.getElementById('zParam');
-    const enableZCheckbox = document.getElementById('enableZ');
-    const generateBtn = document.getElementById('generateBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const fileListDiv = document.getElementById('fileList');
-
-    // --- File Upload Handling ---
-    const handleFile = (file) => {
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                baseSettings = JSON.parse(e.target.result);
-                populateParameterDropdowns();
-                document.getElementById('globalSettings').style.display = 'block';
-                fileInfoDiv.textContent = `Loaded: ${file.name}`;
-                fileInfoDiv.style.display = 'block';
-                updateBatchNamePreview();
-            } catch (error) {
-                alert('Error parsing settings file: ' + error.message);
-                fileInfoDiv.style.display = 'none';
-            }
-        };
-        reader.readAsText(file);
+    // Element References
+    const elements = {
+        dropZone: document.getElementById('dropZone'),
+        settingsFile: document.getElementById('settingsFile'),
+        fileInfo: document.getElementById('fileInfo'),
+        globalSettings: document.getElementById('globalSettings'),
+        batchNameTemplate: document.getElementById('batchNameTemplate'),
+        batchNamePreview: document.getElementById('batchNamePreview'),
+        variableButtons: document.querySelector('.variable-buttons'),
+        xParam: document.getElementById('xParam'),
+        yParam: document.getElementById('yParam'),
+        zParam: document.getElementById('zParam'),
+        xParamInfo: document.getElementById('xParamInfo'),
+        yParamInfo: document.getElementById('yParamInfo'),
+        zParamInfo: document.getElementById('zParamInfo'),
+        enableZ: document.getElementById('enableZ'),
+        zParamGroup: document.getElementById('zParamGroup'),
+        valueContainers: document.getElementById('value-containers'),
+        xValues: document.getElementById('xValues'),
+        yValues: document.getElementById('yValues'),
+        zValues: document.getElementById('zValues'),
+        addXValueBtn: document.getElementById('addXValueBtn'),
+        addYValueBtn: document.getElementById('addYValueBtn'),
+        addZValueBtn: document.getElementById('addZValueBtn'),
+        generateBtn: document.getElementById('generateBtn'),
+        loadingSpinner: document.getElementById('loadingSpinner'),
+        results: document.getElementById('results'),
+        fileCount: document.getElementById('fileCount'),
+        downloadBtn: document.getElementById('downloadBtn'),
+        fileList: document.getElementById('fileList'),
     };
 
-    dropZone.addEventListener('click', () => settingsFileInput.click());
-    dropZone.addEventListener('dragover', e => {
+    // --- File Handling ---
+    const preventDefaults = (e) => {
         e.preventDefault();
-        dropZone.classList.add('dragover');
+        e.stopPropagation();
+    };
+
+    const highlight = () => elements.dropZone.classList.add('dragover');
+    const unhighlight = () => elements.dropZone.classList.remove('dragover');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, preventDefaults, false);
     });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
+    ['dragenter', 'dragover'].forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, highlight, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    elements.dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    });
+
+    elements.settingsFile.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        if (target.files) {
+            handleFiles(target.files);
+        }
+    });
+
+    function handleFiles(files) {
         if (files.length > 0) {
             handleFile(files[0]);
         }
-    });
-    settingsFileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
+    }
 
+    function handleFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target?.result as string;
+            if (!result || result.trim() === '') {
+                alert('Error: The selected file is empty.');
+                resetUIState();
+                return;
+            }
 
-    // --- Batch Name Template ---
-    const insertVariable = (variable) => {
-        const cursorPos = batchNameTemplateInput.selectionStart || 0;
-        const textBefore = batchNameTemplateInput.value.substring(0, cursorPos);
-        const textAfter = batchNameTemplateInput.value.substring(batchNameTemplateInput.selectionEnd || 0);
-        batchNameTemplateInput.value = textBefore + variable + textAfter;
-        batchNameTemplateInput.focus();
-        batchNameTemplateInput.setSelectionRange(cursorPos + variable.length, cursorPos + variable.length);
-        updateBatchNamePreview();
-    };
+            // More robust comment stripping that avoids breaking URLs
+            const contentWithoutComments = result.replace(/^(?!\s*["'])s*\/\/[^\r\n]*|(?<!:)\/\/[^\r\n]*/gm, '').replace(/^\s*#.*/gm, '');
 
-    document.querySelectorAll('.variable-btn').forEach(button => {
-        button.addEventListener('click', () => insertVariable(button.dataset.variable || ''));
-    });
-
-    const getFirstValueFromInputs = (selector) => {
-        const input = document.querySelector(selector);
-        if (!input) return '';
-        const value = input.value.trim();
-        if (!value) return '';
-        try {
-            const parsedValues = parseRange(value);
-            return parsedValues.length > 0 ? parsedValues[0] : '';
-        } catch (e) {
-            return value;
-        }
-    };
-
-    const generateBatchName = (template, params) => {
-        if (!baseSettings) return template;
-
-        const now = new Date();
-        const timestring = now.getFullYear().toString() +
-            (now.getMonth() + 1).toString().padStart(2, '0') +
-            now.getDate().toString().padStart(2, '0') +
-            now.getHours().toString().padStart(2, '0') +
-            now.getMinutes().toString().padStart(2, '0') +
-            now.getSeconds().toString().padStart(2, '0');
-
-        const variables = {
-            timestring: timestring,
-            seed: getNestedProperty(baseSettings, 'seed') ?? -1,
-            seed_behavior: getNestedProperty(baseSettings, 'seed_behavior') ?? 'iter',
-            w: getNestedProperty(baseSettings, 'W') ?? 512,
-            h: getNestedProperty(baseSettings, 'H') ?? 512,
-            x_param: params.xParam ? params.xParam.split('.').pop() : 'x_param',
-            x_value: params.xValue ?? 'x_val',
-            y_param: params.yParam ? params.yParam.split('.').pop() : 'y_param',
-            y_value: params.yValue ?? 'y_val',
-            z_param: params.zParam ? params.zParam.split('.').pop() : 'z_param',
-            z_value: params.zValue ?? 'z_val',
-            steps: getNestedProperty(baseSettings, 'steps') ?? 20,
-            cfg_scale: getNestedProperty(baseSettings, 'cfg_scale') ?? 7,
-            sampler: getNestedProperty(baseSettings, 'sampler') ?? 'Euler a',
-            strength: getNestedProperty(baseSettings, 'strength') ?? 0.75,
-            max_frames: getNestedProperty(baseSettings, 'max_frames') ?? 120
+            try {
+                baseSettings = JSON.parse(contentWithoutComments);
+                if (typeof baseSettings !== 'object' || baseSettings === null) {
+                    throw new Error("Parsed content is not a valid object.");
+                }
+                parameterList = Object.keys(baseSettings).sort();
+                populateParameters();
+                elements.fileInfo.textContent = `Loaded: ${file.name}`;
+                elements.fileInfo.style.display = 'block';
+                elements.globalSettings.style.display = 'block';
+                updateBatchNamePreview();
+            } catch (error) {
+                console.error("Parsing error:", error);
+                alert(`Error parsing settings file: ${error.message}. Please ensure it's a valid Deforum JSON/TXT file.`);
+                resetUIState();
+            }
         };
-
-        let result = template;
-        for (const [key, value] of Object.entries(variables)) {
-            result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
-        }
-        return result;
-    };
+        reader.onerror = () => {
+             alert('Error reading the file.');
+             resetUIState();
+        };
+        reader.readAsText(file);
+    }
     
-    const updateBatchNamePreview = () => {
-        if (!baseSettings) return;
-        const template = batchNameTemplateInput.value;
-        const preview = generateBatchName(template, {
-            xParam: xParamSelect.value,
-            yParam: yParamSelect.value,
-            zParam: zEnabled ? zParamSelect.value : '',
-            xValue: getFirstValueFromInputs('.x-value') || 'X_VAL',
-            yValue: getFirstValueFromInputs('.y-value') || 'Y_VAL',
-            zValue: zEnabled ? getFirstValueFromInputs('.z-value') || 'Z_VAL' : 'Z_VAL'
+    function resetUIState() {
+        baseSettings = {};
+        parameterList = [];
+        elements.fileInfo.style.display = 'none';
+        elements.globalSettings.style.display = 'none';
+        ['xParam', 'yParam', 'zParam'].forEach(id => {
+            const select = elements[id];
+            select.innerHTML = '<option value="">Select Parameter</option>';
         });
-        document.getElementById('batchNamePreview').textContent = preview;
-    };
+    }
 
-    batchNameTemplateInput.addEventListener('input', updateBatchNamePreview);
+    // --- Parameter Population & UI ---
+    function populateParameters() {
+        const selects = [elements.xParam, elements.yParam, elements.zParam];
+        selects.forEach(select => {
+            select.innerHTML = '<option value="">Select Parameter</option>';
+            parameterList.forEach(param => {
+                const option = document.createElement('option');
+                option.value = param;
+                option.textContent = param;
+                select.appendChild(option);
+            });
+        });
+    }
 
-    // --- Parameter Handling ---
-    const getParameterList = (settings, prefix = '') => {
-        let params = [];
-        for (const [key, value] of Object.entries(settings)) {
-            const paramName = prefix ? `${prefix}.${key}` : key;
-            if (key === 'prompts' || typeof value === 'function') continue;
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                params = params.concat(getParameterList(value, paramName));
-            } else {
-                params.push(paramName);
-            }
+    elements.enableZ.addEventListener('change', () => {
+        const isEnabled = elements.enableZ.checked;
+        elements.zParamGroup.style.display = isEnabled ? 'block' : 'none';
+        elements.zValues.style.display = isEnabled ? 'block' : 'none';
+    });
+
+    function updateParamInfo(param, infoEl) {
+        if (param && baseSettings[param] !== undefined) {
+            const value = baseSettings[param];
+            const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+            infoEl.innerHTML = `Current value: <strong>${displayValue}</strong>`;
+        } else {
+            infoEl.innerHTML = '';
         }
-        return params.sort();
-    };
+    }
 
-    const populateParameterDropdowns = () => {
-        if (!baseSettings) return;
-        parameterList = getParameterList(baseSettings);
-        const optionsHTML = ['<option value="">Select Parameter</option>']
-            .concat(parameterList.map(param => {
-                const scheduleIndicator = isScheduleParameter(param) ? ' (Schedule)' : '';
-                return `<option value="${param}">${param}${scheduleIndicator}</option>`;
-            })).join('');
-        xParamSelect.innerHTML = yParamSelect.innerHTML = zParamSelect.innerHTML = optionsHTML;
-    };
+    elements.xParam.addEventListener('change', (e) => updateParamInfo((e.target as HTMLSelectElement).value, elements.xParamInfo));
+    elements.yParam.addEventListener('change', (e) => updateParamInfo((e.target as HTMLSelectElement).value, elements.yParamInfo));
+    elements.zParam.addEventListener('change', (e) => updateParamInfo((e.target as HTMLSelectElement).value, elements.zParamInfo));
 
-    const getNestedProperty = (obj, path) => {
-        return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-    };
-    
-    const setNestedProperty = (obj, path, value) => {
-        const parts = path.split('.');
-        const last = parts.pop();
-        const target = parts.reduce((acc, part) => acc[part] = acc[part] || {}, obj);
-        target[last] = value;
-    };
 
-    const updateParamInfo = (axis) => {
-        const param = document.getElementById(`${axis}Param`).value;
-        const infoDiv = document.getElementById(`${axis}ParamInfo`);
-        if (!param || !baseSettings) {
-            infoDiv.innerHTML = '';
-            return;
-        }
-        const value = getNestedProperty(baseSettings, param);
-        const type = typeof value;
-        parameterTypes[param] = type;
-        
-        let infoText = `<strong>Type:</strong> ${type}`;
-        if (isScheduleParameter(param)) {
-            infoText += ' <strong>(Schedule)</strong>';
-        }
-        if (value !== undefined) {
-            infoText += `, <strong>Current:</strong> ${JSON.stringify(value)}`;
-        }
-        infoDiv.innerHTML = infoText;
-        updateBatchNamePreview();
-    };
-    
-    xParamSelect.addEventListener('change', () => updateParamInfo('x'));
-    yParamSelect.addEventListener('change', () => updateParamInfo('y'));
-    zParamSelect.addEventListener('change', () => updateParamInfo('z'));
-
-    // --- Z-Axis Toggle ---
-    const toggleZAxis = () => {
-        zEnabled = enableZCheckbox.checked;
-        document.getElementById('zParamGroup').style.display = zEnabled ? 'block' : 'none';
-        document.getElementById('zValues').style.display = zEnabled ? 'block' : 'none';
-        updateBatchNamePreview();
-    };
-    enableZCheckbox.addEventListener('change', toggleZAxis);
-
-    // --- Value Parsing & Handling ---
-    const parseRange = (rangeStr) => {
-        rangeStr = rangeStr.trim();
-        if (rangeStr.toLowerCase() === 'true') return [true];
-        if (rangeStr.toLowerCase() === 'false') return [false];
-
-        if (rangeStr.includes(',')) {
-             return rangeStr.split(',').map(s => parseParameterValue(s.trim()));
-        }
-
-        const countMatch = rangeStr.match(/^(\-?\d*\.?\d+)-(\-?\d*\.?\d+)\s*\[\s*(\d+)\s*\]$/);
-        if (countMatch) {
-            const start = parseFloat(countMatch[1]), end = parseFloat(countMatch[2]), count = parseInt(countMatch[3]);
-            if (count < 2) return [start];
-            return Array.from({length: count}, (_, i) => parseFloat((start + i * (end - start) / (count - 1)).toFixed(10)));
-        }
-
-        const incrementMatch = rangeStr.match(/^(\-?\d*\.?\d+)-(\-?\d*\.?\d+)\s*\(\s*([+\-]?\d*\.?\d+)\s*\)$/);
-        if (incrementMatch) {
-            const start = parseFloat(incrementMatch[1]), end = parseFloat(incrementMatch[2]), increment = parseFloat(incrementMatch[3]);
-            if (increment === 0) throw new Error("Increment cannot be zero.");
-            const result = [];
-            for (let v = start; (increment > 0 ? v <= end : v >= end); v += increment) {
-                result.push(parseFloat(v.toFixed(10)));
-            }
-            return result;
-        }
-
-        const simpleRangeMatch = rangeStr.match(/^(\-?\d*\.?\d+)-(\-?\d*\.?\d+)$/);
-        if (simpleRangeMatch) {
-            const start = parseFloat(simpleRangeMatch[1]), end = parseFloat(simpleRangeMatch[2]);
-            const result = [];
-            for (let i = start; start <= end ? i <= end : i >= end; i += (start <= end ? 1 : -1)) {
-                result.push(i);
-            }
-            return result;
-        }
-        return [parseParameterValue(rangeStr)];
-    };
-    
-    const parseParameterValue = (value) => {
-        if (!isNaN(Number(value)) && value.trim() !== '') return Number(value);
-        if (value.toLowerCase() === 'true') return true;
-        if (value.toLowerCase() === 'false') return false;
-        return value;
-    };
-    
-    const validateValueInput = (input) => {
-        const value = input.value.trim();
-        if (!value) {
-            input.classList.remove('invalid-input');
-            return;
-        }
-        try {
-            parseRange(value);
-            input.classList.remove('invalid-input');
-        } catch (e) {
-            input.classList.add('invalid-input');
-        }
-    };
-
-    const addValueInput = (type) => {
-        const container = document.getElementById(`${type}ValueFields`);
+    // --- Value Field Management ---
+    function createValueInput(axis) {
         const div = document.createElement('div');
         div.className = 'input-group';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Value or Range';
-        input.className = `value-input ${type}-value`;
-        input.addEventListener('input', () => {
-            validateValueInput(input);
-            updateBatchNamePreview();
-        });
-        div.innerHTML = `<button type="button" class="remove-btn">Remove</button>`;
-        div.prepend(input);
-        container.appendChild(div);
-    };
+        div.innerHTML = `
+            <input type="text" placeholder="Value or Range" class="value-input ${axis}-value">
+            <button type="button" class="remove-btn">Remove</button>
+        `;
+        return div;
+    }
 
-    document.getElementById('addXValueBtn').addEventListener('click', () => addValueInput('x'));
-    document.getElementById('addYValueBtn').addEventListener('click', () => addValueInput('y'));
-    document.getElementById('addZValueBtn').addEventListener('click', () => addValueInput('z'));
+    elements.addXValueBtn.addEventListener('click', () => {
+        document.getElementById('xValueFields').appendChild(createValueInput('x'));
+    });
+    elements.addYValueBtn.addEventListener('click', () => {
+        document.getElementById('yValueFields').appendChild(createValueInput('y'));
+    });
+    elements.addZValueBtn.addEventListener('click', () => {
+        document.getElementById('zValueFields').appendChild(createValueInput('z'));
+    });
 
-    document.getElementById('value-containers').addEventListener('click', (e) => {
-        const target = e.target;
+    elements.valueContainers.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
         if (target.classList.contains('remove-btn')) {
-            const group = target.parentElement;
-            if (group && group.parentElement && group.parentElement.children.length > 1) { // Prevent removing the last one
-                group.remove();
-                updateBatchNamePreview();
+            const inputGroup = target.parentElement;
+            // Don't remove the last one
+            if (inputGroup.parentElement.children.length > 1) {
+                inputGroup.remove();
             }
         }
     });
     
-    document.querySelectorAll('.value-input').forEach(input => {
-        input.addEventListener('input', () => {
-            validateValueInput(input);
-            updateBatchNamePreview();
-        });
+    // Live validation
+    elements.valueContainers.addEventListener('input', (e) => {
+       const target = e.target as HTMLInputElement;
+       if (target.classList.contains('value-input')) {
+           try {
+               parseRange(target.value);
+               target.classList.remove('invalid-input');
+           } catch {
+               target.classList.add('invalid-input');
+           }
+       }
     });
 
-    const isScheduleParameter = (paramName) => scheduleParameters.has(paramName.split('.').pop());
-    const formatScheduleValue = (paramName, value) => isScheduleParameter(paramName) ? `0: (${value})` : value;
+    // --- Generation Logic ---
+    function parseRange(str) {
+        str = str.trim();
+        if (str === '') return [];
+        if (!isNaN(parseFloat(str)) && isFinite(str as any)) return [str];
+        if (str.toLowerCase() === 'true' || str.toLowerCase() === 'false') return [str];
 
-    // --- Generation & Display ---
-    const generateSettings = () => {
-        if (!baseSettings) return alert('Please upload a settings file first.');
-        const xParam = xParamSelect.value, yParam = yParamSelect.value, zParam = zEnabled ? zParamSelect.value : null;
-        if (!xParam || !yParam || (zEnabled && !zParam)) return alert('Please select parameters for all enabled axes.');
+        // Range with count: 1-10 [5]
+        let match = str.match(/^(-?\d*\.?\d+)\s*-\s*(-?\d*\.?\d+)\s*\[\s*(\d+)\s*\]$/);
+        if (match) {
+            const start = parseFloat(match[1]);
+            const end = parseFloat(match[2]);
+            const count = parseInt(match[3], 10);
+            if (count < 2) return [String(start)];
+            const step = (end - start) / (count - 1);
+            return Array.from({ length: count }, (_, i) => String(start + i * step));
+        }
 
-        const getValuesFromInputs = (selector) => {
-            let values = [];
-            document.querySelectorAll(selector).forEach(input => {
-                const value = input.value.trim();
-                if (value) {
-                    try {
-                        values = values.concat(parseRange(value));
-                    } catch (e) {
-                        throw new Error(`Invalid format in one of the inputs: "${value}"`);
-                    }
-                }
-            });
-            return [...new Set(values)]; // Deduplicate
-        };
+        // Range with step: 1-5 (+2)
+        match = str.match(/^(-?\d*\.?\d+)\s*-\s*(-?\d*\.?\d+)\s*\(\+\s*(-?\d*\.?\d+)\s*\)$/);
+        if (match) {
+            const start = parseFloat(match[1]);
+            const end = parseFloat(match[2]);
+            const step = parseFloat(match[3]);
+            if (step === 0) return [String(start)];
+            const results = [];
+            for (let i = start; (step > 0 ? i <= end : i >= end); i += step) {
+                results.push(String(i));
+            }
+            return results;
+        }
         
-        const spinner = document.getElementById('loadingSpinner');
-        generateBtn.disabled = true;
-        spinner.style.display = 'inline-block';
-        generateBtn.textContent = 'Generating...';
+        // Simple range: 1-5
+        match = str.match(/^(-?\d+)\s*-\s*(-?\d+)$/);
+        if (match) {
+            const start = parseInt(match[1], 10);
+            const end = parseInt(match[2], 10);
+            const length = Math.abs(end - start) + 1;
+            const step = start < end ? 1 : -1;
+            return Array.from({ length }, (_, i) => String(start + i * step));
+        }
+        
+        // CSV: "val1, val2, val3"
+        if (str.includes(',')) {
+            return str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        }
 
+        // Single string value
+        return [str];
+    }
+    
+    function getValuesFromInputs(className) {
+        const inputs = document.querySelectorAll(`.${className}`);
+        let allValues = [];
+        inputs.forEach((input: HTMLInputElement) => {
+            try {
+                const parsed = parseRange(input.value);
+                allValues = allValues.concat(parsed);
+            } catch (e) {
+                console.warn(`Could not parse value: ${input.value}`);
+            }
+        });
+        return [...new Set(allValues)]; // Remove duplicates
+    }
+
+    elements.generateBtn.addEventListener('click', () => {
+        elements.generateBtn.disabled = true;
+        elements.loadingSpinner.style.display = 'inline-block';
+        elements.generateBtn.innerHTML = 'Generating... <span class="spinner"></span>';
+        
+        // Use setTimeout to allow UI to update before heavy processing
         setTimeout(() => {
             try {
-                const xValues = getValuesFromInputs('.x-value');
-                const yValues = getValuesFromInputs('.y-value');
-                const zValues = zEnabled ? getValuesFromInputs('.z-value') : [null];
-                if (xValues.length === 0 || yValues.length === 0 || (zEnabled && zValues.length === 0)) {
-                    throw new Error('Please add at least one value for each enabled axis.');
-                }
-
-                generatedSettings = [];
-                for (const zValue of zValues) {
-                    for (const yValue of yValues) {
-                        for (const xValue of xValues) {
-                            const settings = JSON.parse(JSON.stringify(baseSettings));
-                            setNestedProperty(settings, xParam, formatScheduleValue(xParam, xValue));
-                            setNestedProperty(settings, yParam, formatScheduleValue(yParam, yValue));
-                            if (zEnabled && zValue !== null && zParam) {
-                                setNestedProperty(settings, zParam, formatScheduleValue(zParam, zValue));
-                            }
-                            const batchName = generateBatchName(batchNameTemplateInput.value, { xParam, yParam, zParam, xValue, yValue, zValue });
-                            settings.batch_name = batchName;
-                            
-                            const fileName = `${xParam.replace(/\./g, '_')}_${xValue}_${yParam.replace(/\./g, '_')}_${yValue}${zEnabled && zValue !== null && zParam ? `_${zParam.replace(/\./g, '_')}_${zValue}` : ''}.txt`;
-
-                            generatedSettings.push({ x: xValue, y: yValue, z: zValue, fileName, settings, batchName });
-                        }
-                    }
-                }
-                displayResults();
-            } catch (error) {
-                alert(`Generation failed: ${error.message}`);
+                generate();
+            } catch(e) {
+                console.error(e);
+                alert("An error occurred during generation. Check the console for details.");
             } finally {
-                generateBtn.disabled = false;
-                spinner.style.display = 'none';
-                generateBtn.textContent = 'Generate Plot Settings';
+                elements.generateBtn.disabled = false;
+                elements.loadingSpinner.style.display = 'none';
+                elements.generateBtn.textContent = 'Generate Plot Settings';
             }
         }, 10);
-    };
+    });
 
-    const displayResults = () => {
-        document.getElementById('results').style.display = 'block';
-        document.getElementById('fileCount').textContent = generatedSettings.length.toString();
-        fileListDiv.innerHTML = '';
+    function generate() {
+        const xParam = elements.xParam.value;
+        const yParam = elements.yParam.value;
+        const zParam = elements.enableZ.checked ? elements.zParam.value : null;
 
-        if (zEnabled) {
-            const zGroups = generatedSettings.reduce((acc, item) => {
-                const key = String(item.z);
-                (acc[key] = acc[key] || []).push(item);
-                return acc;
-            }, {});
-            
-            Object.entries(zGroups).forEach(([zValue, items]) => {
-                const zDiv = document.createElement('div');
-                zDiv.className = 'z-group';
-                zDiv.innerHTML = `<h3>Z: ${zParamSelect.value.split('.').pop()} = ${zValue}</h3>
-                                <p>${items.length} files in this group</p>
-                                <button class="download-z-btn" data-z-value="${zValue}">Download This Z Group (.zip)</button>`;
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `<p><strong>File:</strong> ${item.fileName}</p>
-                                     <p><strong>X:</strong> ${item.x}, <strong>Y:</strong> ${item.y}</p>
-                                     <button class="download-single-btn" data-filename="${item.fileName}">Download</button>`;
-                    zDiv.appendChild(div);
-                });
-                fileListDiv.appendChild(zDiv);
-            });
-        } else {
-            generatedSettings.forEach(item => {
-                const div = document.createElement('div');
-                div.innerHTML = `<p><strong>File:</strong> ${item.fileName}</p>
-                                 <p><strong>X:</strong> ${item.x}, <strong>Y:</strong> ${item.y}</p>
-                                 <button class="download-single-btn" data-filename="${item.fileName}">Download</button>`;
-                fileListDiv.appendChild(div);
-            });
+        if (!xParam || !yParam) {
+            alert('Please select both X and Y parameters.');
+            return;
         }
-    };
+
+        const xValues = getValuesFromInputs('x-value');
+        const yValues = getValuesFromInputs('y-value');
+        const zValues = zParam ? getValuesFromInputs('z-value') : [null];
+
+        generatedSettings = [];
+
+        for (const z of zValues) {
+            for (const y of yValues) {
+                for (const x of xValues) {
+                    const newSettings = JSON.parse(JSON.stringify(baseSettings));
+                    
+                    const isXSchedule = xParam.includes('schedule');
+                    const isYSchedule = yParam.includes('schedule');
+                    const isZSchedule = zParam && zParam.includes('schedule');
+                    
+                    newSettings[xParam] = isXSchedule ? `0: (${x})` : (isNaN(x as any) ? x : parseFloat(x));
+                    newSettings[yParam] = isYSchedule ? `0: (${y})` : (isNaN(y as any) ? y : parseFloat(y));
+
+                    if (zParam && z !== null) {
+                         newSettings[zParam] = isZSchedule ? `0: (${z})` : (isNaN(z as any) ? z : parseFloat(z));
+                    }
+
+                    const context = {
+                        x_param: xParam,
+                        x_value: x,
+                        y_param: yParam,
+                        y_value: y,
+                        z_param: zParam || 'none',
+                        z_value: z || 'none',
+                        timestring: new Date().toISOString().replace(/[-:.]/g, '').slice(0, 14),
+                        ...baseSettings
+                    };
+                    
+                    newSettings.batch_name = formatBatchName(elements.batchNameTemplate.value, context);
+
+                    generatedSettings.push({
+                        settings: newSettings,
+                        x, y, z, xParam, yParam, zParam
+                    });
+                }
+            }
+        }
+        displayResults();
+    }
     
-    generateBtn.addEventListener('click', generateSettings);
+    // --- Batch Name Templating ---
+    function formatBatchName(template, context) {
+        return template.replace(/{([^}]+)}/g, (match, key) => {
+            if (key in context) {
+                let value = context[key];
+                // Sanitize value for filenames
+                if (typeof value === 'string') {
+                   return value.replace(/[\\/:*?"<>|]/g, '_');
+                }
+                return value;
+            }
+            return match; // Keep placeholder if key not found
+        });
+    }
+    
+    function updateBatchNamePreview() {
+        if (!parameterList.length) return;
+        const xParam = elements.xParam.value || 'x_param';
+        const yParam = elements.yParam.value || 'y_param';
+        const zParam = elements.zParam.value || 'z_param';
+        
+        const firstX = document.querySelector('.x-value')?.value.split(',')[0].trim() || 'x_value';
+        const firstY = document.querySelector('.y-value')?.value.split(',')[0].trim() || 'y_value';
+        const firstZ = document.querySelector('.z-value')?.value.split(',')[0].trim() || 'z_value';
 
-    // --- Downloading ---
-    const downloadSingleSetting = (fileName) => {
-        const item = generatedSettings.find(i => i.fileName === fileName);
-        if (item) {
-            const blob = new Blob([JSON.stringify(item.settings, null, 4)], { type: 'application/json' });
-            saveAs(blob, item.fileName);
+        const context = {
+            x_param: xParam,
+            x_value: parseRange(firstX)[0] || firstX,
+            y_param: yParam,
+            y_value: parseRange(firstY)[0] || firstY,
+            z_param: zParam,
+            z_value: parseRange(firstZ)[0] || firstZ,
+            timestring: new Date().toISOString().replace(/[-:.]/g, '').slice(0, 14),
+            ...baseSettings
+        };
+        elements.batchNamePreview.textContent = formatBatchName(elements.batchNameTemplate.value, context);
+    }
+    
+    [elements.batchNameTemplate, elements.xParam, elements.yParam, elements.zParam].forEach(el => {
+        el.addEventListener('input', updateBatchNamePreview);
+    });
+    elements.valueContainers.addEventListener('input', updateBatchNamePreview);
+    
+    elements.variableButtons.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('variable-btn')) {
+            const variable = target.dataset.variable;
+            const input = elements.batchNameTemplate;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            input.value = text.substring(0, start) + variable + text.substring(end);
+            input.focus();
+            input.selectionStart = input.selectionEnd = start + variable.length;
+            updateBatchNamePreview();
         }
-    };
+    });
 
-    const downloadZGroup = (zValue) => {
-        const items = generatedSettings.filter(item => String(item.z) === String(zValue));
-        if (items.length === 0) return;
-        
-        const zip = new JSZip();
-        const zParamShort = zParamSelect.value.split('.').pop();
-        const folderName = `z_${zParamShort}_${zValue}`;
-        
-        items.forEach(item => zip.file(item.fileName, JSON.stringify(item.settings, null, 4)));
-        zip.generateAsync({ type: 'blob' }).then((content) => saveAs(content, `deforum_plot_${folderName}.zip`));
-    };
 
-    const downloadAllSettings = () => {
+    // --- Results Display & Download ---
+    function displayResults() {
+        elements.fileList.innerHTML = '';
+        elements.fileCount.textContent = generatedSettings.length.toString();
+
+        if (generatedSettings.length === 0) {
+            elements.results.style.display = 'none';
+            return;
+        }
+
+        const zGroups = generatedSettings.reduce((acc, curr) => {
+            const key = curr.z || 'default';
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(curr);
+            return acc;
+        }, {});
+
+        for (const zValue in zGroups) {
+            const group = zGroups[zValue];
+            const zParam = group[0].zParam;
+
+            if (zParam) {
+                const zGroupEl = document.createElement('div');
+                zGroupEl.className = 'z-group';
+                const zTitle = document.createElement('h4');
+                zTitle.textContent = `Z: ${zParam} = ${zValue} (${group.length} files)`;
+                zGroupEl.appendChild(zTitle);
+                elements.fileList.appendChild(zGroupEl);
+                group.forEach(item => zGroupEl.appendChild(createFileEntry(item)));
+            } else {
+                group.forEach(item => elements.fileList.appendChild(createFileEntry(item)));
+            }
+        }
+
+        elements.results.style.display = 'block';
+    }
+
+    function createFileEntry({ settings, x, y, z, xParam, yParam, zParam }) {
+        const div = document.createElement('div');
+        let title = `${xParam}: ${x}, ${yParam}: ${y}`;
+        if (zParam) title += `, ${zParam}: ${z}`;
+        div.textContent = title;
+        return div;
+    }
+
+    elements.downloadBtn.addEventListener('click', async () => {
         if (generatedSettings.length === 0) return;
-        const zip = new JSZip();
-        if (zEnabled) {
-            const zGroups = generatedSettings.reduce((acc, item) => {
-                const key = String(item.z);
-                (acc[key] = acc[key] || []).push(item);
-                return acc;
-            }, {});
-            const zParamShort = zParamSelect.value.split('.').pop();
-            Object.entries(zGroups).forEach(([zValue, items]) => {
-                const folderName = `z_${zParamShort}_${zValue}`;
-                items.forEach(item => zip.file(`${folderName}/${item.fileName}`, JSON.stringify(item.settings, null, 4)));
-            });
-        } else {
-            generatedSettings.forEach(item => zip.file(item.fileName, JSON.stringify(item.settings, null, 4)));
-        }
-        
-        const timestampMatch = generatedSettings[0].batchName.match(/^\d{14}/);
-        const zipName = timestampMatch ? `deforum_xyz_plot_${timestampMatch[0]}` : 'deforum_xyz_plot_settings';
-        zip.generateAsync({ type: 'blob' }).then((content) => saveAs(content, `${zipName}.zip`));
-    };
-    
-    downloadBtn.addEventListener('click', downloadAllSettings);
 
-    fileListDiv.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target.classList.contains('download-single-btn')) {
-            const filename = target.dataset.filename;
-            if (filename) {
-                downloadSingleSetting(filename);
-            }
-        } else if (target.classList.contains('download-z-btn')) {
-            const zValue = target.dataset.zValue;
-            if (zValue) {
-                downloadZGroup(zValue);
-            }
-        }
+        const zip = new JSZip();
+        generatedSettings.forEach(({ settings }) => {
+            const filename = `${settings.batch_name}.txt`;
+            const content = JSON.stringify(settings, null, 4);
+            zip.file(filename, content);
+        });
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        saveAs(content, 'deforum_plot_settings.zip');
     });
 });
