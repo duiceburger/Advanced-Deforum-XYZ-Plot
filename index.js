@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     elements.settingsFile.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
+        const target = e.target;
         if (target.files) {
             handleFiles(target.files);
         }
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleFile(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const result = e.target?.result as string;
+            const result = e.target?.result;
             if (!result || result.trim() === '') {
                 alert('Error: The selected file is empty.');
                 resetUIState();
@@ -154,9 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    elements.xParam.addEventListener('change', (e) => updateParamInfo((e.target as HTMLSelectElement).value, elements.xParamInfo));
-    elements.yParam.addEventListener('change', (e) => updateParamInfo((e.target as HTMLSelectElement).value, elements.yParamInfo));
-    elements.zParam.addEventListener('change', (e) => updateParamInfo((e.target as HTMLSelectElement).value, elements.zParamInfo));
+    elements.xParam.addEventListener('change', (e) => updateParamInfo(e.target.value, elements.xParamInfo));
+    elements.yParam.addEventListener('change', (e) => updateParamInfo(e.target.value, elements.yParamInfo));
+    elements.zParam.addEventListener('change', (e) => updateParamInfo(e.target.value, elements.zParamInfo));
 
 
     // --- Value Field Management ---
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     elements.valueContainers.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
+        const target = e.target;
         if (target.classList.contains('remove-btn')) {
             const inputGroup = target.parentElement;
             // Don't remove the last one
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Live validation
     elements.valueContainers.addEventListener('input', (e) => {
-       const target = e.target as HTMLInputElement;
+       const target = e.target;
        if (target.classList.contains('value-input')) {
            try {
                parseRange(target.value);
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseRange(str) {
         str = str.trim();
         if (str === '') return [];
-        if (!isNaN(parseFloat(str)) && isFinite(str as any)) return [str];
+        if (!isNaN(parseFloat(str)) && isFinite(str)) return [str];
         if (str.toLowerCase() === 'true' || str.toLowerCase() === 'false') return [str];
 
         // Range with count: 1-10 [5]
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getValuesFromInputs(className) {
         const inputs = document.querySelectorAll(`.${className}`);
         let allValues = [];
-        inputs.forEach((input: HTMLInputElement) => {
+        inputs.forEach((input) => {
             try {
                 const parsed = parseRange(input.value);
                 allValues = allValues.concat(parsed);
@@ -314,11 +314,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const isYSchedule = yParam.includes('schedule');
                     const isZSchedule = zParam && zParam.includes('schedule');
                     
-                    newSettings[xParam] = isXSchedule ? `0: (${x})` : (isNaN(x as any) ? x : parseFloat(x));
-                    newSettings[yParam] = isYSchedule ? `0: (${y})` : (isNaN(y as any) ? y : parseFloat(y));
+                    newSettings[xParam] = isXSchedule ? `0: (${x})` : (isNaN(x) ? x : parseFloat(x));
+                    newSettings[yParam] = isYSchedule ? `0: (${y})` : (isNaN(y) ? y : parseFloat(y));
 
                     if (zParam && z !== null) {
-                         newSettings[zParam] = isZSchedule ? `0: (${z})` : (isNaN(z as any) ? z : parseFloat(z));
+                         newSettings[zParam] = isZSchedule ? `0: (${z})` : (isNaN(z) ? z : parseFloat(z));
                     }
 
                     const context = {
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.valueContainers.addEventListener('input', updateBatchNamePreview);
     
     elements.variableButtons.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
+        const target = e.target;
         if (target.classList.contains('variable-btn')) {
             const variable = target.dataset.variable;
             const input = elements.batchNameTemplate;

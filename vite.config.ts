@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -16,7 +17,11 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          // FIX: `__dirname` is not available in ES modules.
+          // We use `import.meta.url` to get the current file's URL and
+          // `fileURLToPath` to convert it to a file system path, which
+          // is the modern equivalent of `__dirname`.
+          '@': fileURLToPath(new URL('.', import.meta.url)),
         }
       }
     };
