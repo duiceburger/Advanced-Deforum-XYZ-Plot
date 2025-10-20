@@ -374,3 +374,38 @@ option {
     margin-top: 0;
     color: #e0e0e0;
 }
+
+/* Keyframe Editor Styles */
+.keyframe-row {
+    align-items: center;
+}
+.keyframe-frame {
+    flex: 0 0 90px;
+}
+.keyframe-prompt {
+    flex: 1 1 auto;
+}
+#addKeyframeBtn {
+    margin-top: 10px;
+}
+
+/* Prompt Plotting Options */
+.prompt-options {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid #2196F3;
+}
+.prompt-options label {
+    margin-bottom: 0;
+    font-weight: normal;
+    flex-shrink: 0;
+}
+.prompt-options select {
+    width: auto;
+    flex-grow: 1;
+}

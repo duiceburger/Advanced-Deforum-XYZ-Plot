@@ -149,9 +149,11 @@
 
                 <div id="animatedPromptsContainer" style="display: none;">
                      <div class="form-group">
-                        <label for="prompts">Animation Prompts (JSON)</label>
-                        <textarea id="prompts" rows="10"></textarea>
-                        <p class="param-info">Content must be valid JSON. Invalid format will be ignored during generation.</p>
+                        <label>Animation Keyframes</label>
+                        <div id="animatedPromptsFields">
+                            <!-- Keyframe rows will be added here by JS -->
+                        </div>
+                        <button type="button" id="addKeyframeBtn">Add Keyframe</button>
                     </div>
                 </div>
             </div>
@@ -165,6 +167,13 @@
                     <select id="xParam">
                         <option value="">Select Parameter</option>
                     </select>
+                    <div id="xParamPromptOptions" class="prompt-options" style="display: none;">
+                         <label for="xPromptMode">Prompt Mode:</label>
+                         <select id="xPromptMode" class="prompt-mode-select">
+                             <option value="override" selected>Override Prompts</option>
+                             <option value="append">Append to Positive Prompt</option>
+                         </select>
+                    </div>
                     <div id="xParamInfo" class="param-info"></div>
                 </div>
                 <div class="form-group">
@@ -172,6 +181,13 @@
                     <select id="yParam">
                         <option value="">Select Parameter</option>
                     </select>
+                     <div id="yParamPromptOptions" class="prompt-options" style="display: none;">
+                         <label for="yPromptMode">Prompt Mode:</label>
+                         <select id="yPromptMode" class="prompt-mode-select">
+                             <option value="override" selected>Override Prompts</option>
+                             <option value="append">Append to Positive Prompt</option>
+                         </select>
+                    </div>
                     <div id="yParamInfo" class="param-info"></div>
                 </div>
                 <div class="toggle-switch">
@@ -183,6 +199,13 @@
                     <select id="zParam">
                         <option value="">Select Parameter</option>
                     </select>
+                    <div id="zParamPromptOptions" class="prompt-options" style="display: none;">
+                         <label for="zPromptMode">Prompt Mode:</label>
+                         <select id="zPromptMode" class="prompt-mode-select">
+                             <option value="override" selected>Override Prompts</option>
+                             <option value="append">Append to Positive Prompt</option>
+                         </select>
+                    </div>
                     <div id="zParamInfo" class="param-info"></div>
                 </div>
             </div>

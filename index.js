@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
         animatedPromptsContainer: document.getElementById('animatedPromptsContainer'),
         positivePrompt: document.getElementById('positivePrompt'),
         negativePrompt: document.getElementById('negativePrompt'),
-        prompts: document.getElementById('prompts'),
+        animatedPromptsFields: document.getElementById('animatedPromptsFields'),
+        addKeyframeBtn: document.getElementById('addKeyframeBtn'),
     };
 
     const commonSettingsElements = {
@@ -101,7 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "zoom": "Simulates camera zoom. Positive values zoom in, negative values zoom out.",
         "translation_x": "Moves the frame left (negative) or right (positive).",
         "translation_y": "Moves the frame up (negative) or down (positive).",
-        "translation_z": "Moves the frame forward (positive) or backward (negative).",
+        "translation_z": "Moves the frame forward (positive) or backward (negative) in 3D mode.",
+        "rotation_2d": "Rotates the frame clockwise (positive) or counter-clockwise (negative) in 2D mode.",
         "rotation_3d_x": "Rotates the frame around the X-axis (tilts up/down).",
         "rotation_3d_y": "Rotates the frame around the Y-axis (pans left/right).",
         "rotation_3d_z": "Rotates the frame around the Z-axis (rolls clockwise/counter-clockwise).",
@@ -110,21 +112,36 @@ document.addEventListener('DOMContentLoaded', () => {
         "max_frames": "The total number of frames in the animation.",
         "fps": "Frames Per Second. Controls the speed of the final video.",
         "color_coherence": "Tries to maintain consistent colors between frames.",
-        "noise_schedule": "Controls the amount of noise added at different stages of the animation."
+        "noise_schedule": "Controls the amount of noise added at different stages of the animation.",
+        "prompts": "The text descriptions for the AI to generate images from. Can be keyframed for animation."
     };
 
     const PARAMETER_GROUPS = {
+        "Prompts": ["prompts"],
         "Special Parameters": ["sampler"],
         "Favorites": [
             "strength_schedule", "cfg_scale", "seed", "seed_behavior", "steps",
             "zoom", "translation_x", "translation_y", "translation_z",
-            "rotation_3d_x", "rotation_3d_y", "rotation_3d_z", "noise_schedule"
+            "rotation_2d", "rotation_3d_x", "rotation_3d_y", "rotation_3d_z", "noise_schedule"
         ],
         "Run & Animation": ["animation_mode", "max_frames", "fps"],
-        "Motion": [
-            "zoom", "translation_x", "translation_y", "translation_z", "translation_pano_x", "translation_pano_y", "translation_pano_z",
-            "rotation_3d_x", "rotation_3d_y", "rotation_3d_z",
-            "perspective_flip_theta", "perspective_flip_phi", "perspective_flip_gamma", "perspective_flip_fv"
+        "2D Motion": [
+            "zoom",
+            "translation_x",
+            "translation_y",
+            "rotation_2d"
+        ],
+        "3D Motion": [
+            "translation_x",
+            "translation_y",
+            "translation_z",
+            "rotation_3d_x",
+            "rotation_3d_y",
+            "rotation_3d_z",
+            "perspective_flip_theta",
+            "perspective_flip_phi",
+            "perspective_flip_gamma",
+            "perspective_flip_fv"
         ],
         "Cohesion & Consistency": [
             "strength_schedule", "color_coherence", "diffusion_cadence",
@@ -134,18 +151,19 @@ document.addEventListener('DOMContentLoaded', () => {
         "Seed": ["seed", "seed_behavior", "seed_iter_N"],
         "CFG & Sampling": ["cfg_scale", "steps", "seed_resize_from_w", "seed_resize_from_h"],
         "Image Dimensions": ["W", "H"],
-        "Prompts": ["prompts"],
     };
 
     const PARAM_TYPES = {
         BOOLEAN: ['use_horizontal_flip', 'use_vertical_flip', 'normalize_latent_vectors'],
         SAMPLER: ['sampler'],
+        PROMPTS: ['prompts'],
     };
 
     function getParamType(paramName) {
         if (!paramName) return 'UNKNOWN';
         if (PARAM_TYPES.BOOLEAN.includes(paramName)) return 'BOOLEAN';
         if (PARAM_TYPES.SAMPLER.includes(paramName)) return 'SAMPLER';
+        if (PARAM_TYPES.PROMPTS.includes(paramName)) return 'PROMPTS';
         if (paramName.endsWith('_schedule')) return 'SCHEDULE';
         return 'NUMERIC';
     }
@@ -206,10 +224,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error("Parsed content is not a valid object.");
                 }
                 parameterList = Object.keys(baseSettings).sort();
+
+                // Manually add parameters that might not be in all settings files but are supported by the UI
+                ['rotation_2d'].forEach(p => {
+                    if (!parameterList.includes(p)) {
+                        parameterList.push(p);
+                    }
+                });
+                parameterList.sort();
+
                 populateParameters();
                 elements.fileInfo.textContent = `Loaded: ${file.name}`;
                 elements.fileInfo.style.display = 'block';
-                // elements.globalSettings should be visible inside generateSection now
                 promptsElements.section.style.display = 'block';
                 commonSettingsElements.section.style.display = 'block';
                 elements.selectParamsSection.style.display = 'block';
@@ -248,19 +274,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Prompts Section ---
+    function addKeyframeRow(frame = '', prompt = '') {
+        const container = promptsElements.animatedPromptsFields;
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group keyframe-row';
+        inputGroup.innerHTML = `
+            <input type="number" class="keyframe-frame" placeholder="Frame" value="${frame}" min="0">
+            <input type="text" class="keyframe-prompt" placeholder="Prompt for this frame" value="${prompt}">
+            <button type="button" class="remove-btn">Remove</button>
+        `;
+        container.appendChild(inputGroup);
+        inputGroup.querySelector('.remove-btn').addEventListener('click', () => {
+             if (container.children.length > 1) {
+                inputGroup.remove();
+            } else {
+                alert("At least one keyframe is required for animated prompts.");
+            }
+        });
+    }
+
+    promptsElements.addKeyframeBtn.addEventListener('click', () => addKeyframeRow());
+    
     function togglePromptView() {
         const isAnimated = promptsElements.animatePrompts.checked;
+        
+        if (isAnimated) {
+            // If the animated container was hidden, it means we're switching TO animated prompts.
+            // So, we pre-populate it from the fixed prompts.
+            if (promptsElements.animatedPromptsContainer.style.display === 'none') {
+                const positive = promptsElements.positivePrompt.value.trim();
+                const negative = promptsElements.negativePrompt.value.trim();
+                const combined = negative ? `${positive} --neg ${negative}` : positive;
+                
+                // Clear any old keyframes and create the new one from the fixed prompts.
+                promptsElements.animatedPromptsFields.innerHTML = '';
+                addKeyframeRow('0', combined);
+
+                // Add a second, empty keyframe for convenience if the first one had content.
+                if (combined) {
+                    addKeyframeRow('', '');
+                }
+            }
+        }
+        
         promptsElements.animatedPromptsContainer.style.display = isAnimated ? 'block' : 'none';
         promptsElements.fixedPromptsContainer.style.display = isAnimated ? 'none' : 'block';
     }
 
     function initializePromptsUI() {
         const prompts = baseSettings.prompts || { "0": "" };
-        const keys = Object.keys(prompts);
+        const keys = Object.keys(prompts).sort((a,b) => parseInt(a,10) - parseInt(b,10));
 
         if (keys.length > 1 || (keys.length === 1 && keys[0] !== "0")) {
             // Animated prompts
             promptsElements.animatePrompts.checked = true;
+            promptsElements.animatedPromptsFields.innerHTML = '';
+            keys.forEach(key => addKeyframeRow(key, prompts[key]));
         } else {
             // Fixed prompt
             promptsElements.animatePrompts.checked = false;
@@ -276,29 +345,24 @@ document.addEventListener('DOMContentLoaded', () => {
             promptsElements.positivePrompt.value = parts[0].trim();
             promptsElements.negativePrompt.value = (parts.length > 1) ? parts[1].trim() : "";
         }
-
-        try {
-            promptsElements.prompts.value = JSON.stringify(prompts, null, 2);
-            promptsElements.prompts.classList.remove('invalid-input');
-        } catch {
-             promptsElements.prompts.value = "Could not format prompts JSON.";
-             promptsElements.prompts.classList.add('invalid-input');
-        }
         
         togglePromptView();
     }
     
     function getPromptsObject() {
         if (promptsElements.animatePrompts.checked) {
-            try {
-                const parsed = JSON.parse(promptsElements.prompts.value);
-                promptsElements.prompts.classList.remove('invalid-input');
-                return parsed;
-            } catch (e) {
-                promptsElements.prompts.classList.add('invalid-input');
-                alert('Invalid JSON in Animation Prompts. Generation halted.');
-                throw new Error('Invalid JSON in prompts.');
-            }
+            const prompts = {};
+            const rows = promptsElements.animatedPromptsFields.querySelectorAll('.keyframe-row');
+            rows.forEach(row => {
+                const frameInput = row.querySelector('.keyframe-frame');
+                const promptInput = row.querySelector('.keyframe-prompt');
+                const frame = frameInput.value.trim();
+                const prompt = promptInput.value.trim();
+                if (frame !== '' && !isNaN(frame)) {
+                    prompts[frame] = prompt;
+                }
+            });
+            return prompts;
         } else {
             const positive = promptsElements.positivePrompt.value.trim();
             const negative = promptsElements.negativePrompt.value.trim();
@@ -441,8 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = groupName;
                 PARAMETER_GROUPS[groupName].forEach(param => {
-                    // Only add if it exists in the base file or is a special case like 'sampler'
-                    if (parameterList.includes(param) || param === 'sampler') {
+                    // Only add if it exists in the base file or is a special case
+                    if (parameterList.includes(param) || ['sampler', 'prompts'].includes(param)) {
                         const option = document.createElement('option');
                         option.value = param;
                         option.textContent = param;
@@ -481,6 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateParamUI(axis, e.target.value);
             updateBatchNamePreview();
         });
+        const promptModeSelect = document.getElementById(`${axis}PromptMode`);
+        promptModeSelect.addEventListener('change', () => updateParamUI(axis, paramSelect.value));
     });
 
     function updateParamUI(axis, paramName) {
@@ -489,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const valueFields = document.getElementById(`${axis}ValueFields`);
         const samplerContainer = document.getElementById(`${axis}SamplerValuesContainer`);
+        const promptOptions = document.getElementById(`${axis}ParamPromptOptions`);
         const hint = document.querySelector(`#${axis}Values .value-hint`);
 
         if (!paramName) {
@@ -496,20 +563,32 @@ document.addEventListener('DOMContentLoaded', () => {
             hint.style.display = 'block';
             valueFields.style.display = 'none';
             samplerContainer.style.display = 'none';
+            promptOptions.style.display = 'none';
             return;
         }
 
         hint.style.display = 'none';
-
+        
         const paramType = getParamType(paramName);
+        const firstInput = valueFields.querySelector('.value-input');
+
         if (paramType === 'SAMPLER') {
             valueFields.style.display = 'none';
             samplerContainer.style.display = 'block';
+            promptOptions.style.display = 'none';
+        } else if (paramType === 'PROMPTS') {
+            valueFields.style.display = 'block';
+            samplerContainer.style.display = 'none';
+            promptOptions.style.display = 'block';
+            const mode = document.getElementById(`${axis}PromptMode`).value;
+            firstInput.placeholder = mode === 'append' 
+                ? 'e.g., cinematic lighting, 4k' 
+                : 'e.g., {"0": "a new prompt"}';
         } else {
             valueFields.style.display = 'block';
             samplerContainer.style.display = 'none';
+            promptOptions.style.display = 'none';
             
-            const firstInput = valueFields.querySelector('.value-input');
             if (paramType === 'BOOLEAN') {
                 firstInput.placeholder = 'e.g., true, false';
             } else if (paramType === 'SCHEDULE') {
@@ -711,7 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const el = commonSettingsElements[key];
                     if (el && el.value !== undefined && el.id !== 'durationDisplay') {
                          const val = el.value;
-                         // Convert to number if possible, but respect strings like schedules
                          const numVal = parseFloat(val);
                          commonOverrides[key] = (String(val) === String(numVal)) ? numVal : val;
                     }
@@ -730,18 +808,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 commonOverrides.cfg_scale = commonOverrides.cfg_scale_schedule;
                 delete commonOverrides.cfg_scale_schedule;
 
-                const prompts = getPromptsObject();
+                const basePrompts = getPromptsObject();
 
                 for (const zVal of zValues) {
                     for (const yVal of yValues) {
                         for (const xVal of xValues) {
                             const newSettings = { ...baseSettings, ...commonOverrides };
-                            newSettings.prompts = prompts;
-                            newSettings[xParam] = xVal;
-                            newSettings[yParam] = yVal;
-                            if (zParam && zVal !== null) {
-                                newSettings[zParam] = zVal;
-                            }
+                            
+                            // Start with base prompts, then apply axis modifications
+                            let currentPrompts = JSON.parse(JSON.stringify(basePrompts)); // deep copy
+
+                            // Apply X, Y, Z axis prompt modifications
+                            [
+                                { param: xParam, value: xVal, axis: 'x' },
+                                { param: yParam, value: yVal, axis: 'y' },
+                                { param: zParam, value: zVal, axis: 'z' }
+                            ].forEach(({ param, value, axis }) => {
+                                if (param === 'prompts') {
+                                    const mode = document.getElementById(`${axis}PromptMode`).value;
+                                    if (mode === 'override') {
+                                        try {
+                                            currentPrompts = JSON.parse(value);
+                                        } catch (e) {
+                                            console.warn(`Invalid JSON in prompt override for ${axis}-axis:`, value);
+                                            // Keep previous prompts if parse fails
+                                        }
+                                    } else { // append
+                                        for (const frame in currentPrompts) {
+                                            currentPrompts[frame] += `, ${value}`;
+                                        }
+                                    }
+                                } else if (param) {
+                                    newSettings[param] = value;
+                                }
+                            });
+                            
+                            newSettings.prompts = currentPrompts;
                              
                             const meta = {
                                 generated_by: "Deforum-XYZ-Plot",
@@ -783,6 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const cleanValue = (val) => {
             if (val === null || val === undefined) return 'none';
+            if (typeof val === 'object') val = JSON.stringify(val);
             return String(val).replace(/\s/g, '_').replace(/[():]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '');
         };
         
